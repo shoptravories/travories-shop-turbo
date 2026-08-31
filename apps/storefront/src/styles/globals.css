@@ -1,0 +1,362 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* ─── Design tokens ──────────────────────────────────────────────────────────
+   Semantic shadcn-style tokens plus a brand layer aligned to the Travories
+   parent brand: navy and slate from the parent palette, warmed with terracotta
+   and saffron for the souvenir side. The primary ramp was rebuilt in navy
+   rather than the admin panel's purple - swap this block to change it back. */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 218 93% 12%;
+    --radius: 0.5rem;
+
+    /* Brand layer */
+    --brand-navy: 218 93% 12%;
+    --brand-slate: 213 21% 30%;
+    --brand-terracotta: 16 53% 46%;
+    --brand-saffron: 47 99% 50%;
+    --brand-sand: 38 35% 88%;
+    --brand-paper: 38 44% 96%;
+
+    --primary: 218 93% 12%;
+    --primary-foreground: 38 44% 96%;
+    --primary-light: #e8edf3;
+    --primary-light-hover: #dce4ee;
+    --primary-light-active: #c3d0e1;
+    --primary-normal: 218 93% 12%;
+    --primary-normal-hover: #0a2450;
+    --primary-normal-active: #061b3f;
+    --primary-dark: #041231;
+    --primary-dark-hover: #030e27;
+    --primary-dark-active: #02091a;
+    --primary-darker: #010610;
+    --primary-next: #1e4b8f;
+    --primary-background: #faf7f2;
+    --primary-border: #e0e4e8;
+
+    --secondary: 213 21% 30%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-light: #b2bbc6;
+    --secondary-light-hover: #a3adbb;
+    --secondary-light-active: #909dad;
+    --secondary-normal: #546881;
+    --secondary-normal-hover: #47586e;
+    --secondary-normal-active: #3d4c5e;
+    --secondary-dark: #1d242d;
+    --secondary-dark-hover: #151a20;
+    --secondary-dark-active: #090b0e;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+
+    --primary: 38 44% 96%;
+    --primary-foreground: 218 93% 12%;
+    --primary-normal: 38 44% 96%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--primary-normal));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* ─── Mobile / PWA app-feel polish ───────────────────────────────────────────
+   Global tweaks that make the site feel native on phones without changing
+   layout. Carried over from the Travories house stylesheet. */
+@layer base {
+  html {
+    /* Stop iOS auto-inflating text after a rotate. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    /* Kill the grey flash Android/iOS paints on every tap. */
+    -webkit-tap-highlight-color: transparent;
+    /* Prevent whole-page rubber-banding / pull-to-refresh. Inner scroll
+       areas still scroll normally. */
+    overscroll-behavior-y: contain;
+  }
+
+  .overflow-y-auto,
+  .overflow-auto,
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Remove the double-tap-to-zoom delay so taps register instantly.
+     Pinch-zoom on content still works. */
+  a,
+  button,
+  [role="button"],
+  input,
+  select,
+  textarea,
+  label {
+    touch-action: manipulation;
+  }
+}
+
+/* iOS Safari zooms the page when focusing an input under 16px. Force a 16px
+   minimum on phones so the viewport does not jump on checkout fields. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Honour the OS-level reduce-motion setting. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+/* ─── Lenis smooth scroll ────────────────────────────────────────────────────
+   Required base rules, inlined from lenis/dist/lenis.css. The `lenis` class is
+   added to <html> by the library only when it initialises, so none of this
+   applies under prefers-reduced-motion. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+
+.lenis [data-lenis-prevent],
+.lenis [data-lenis-prevent-wheel],
+.lenis [data-lenis-prevent-touch],
+.lenis [data-lenis-prevent-vertical],
+.lenis [data-lenis-prevent-horizontal] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+.lenis.lenis-autoToggle {
+  transition-property: overflow;
+  transition-duration: 1ms;
+  transition-behavior: allow-discrete;
+}
+
+/* ─── Starter utilities - required by the Medusa storefront components ─────── */
+@layer utilities {
+  /* Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  input:focus ~ label,
+  input:not(:placeholder-shown) ~ label {
+    @apply -translate-y-2 text-xsmall-regular;
+  }
+
+  input:focus ~ label {
+    @apply left-0;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    border: 1px solid #212121;
+    -webkit-text-fill-color: #212121;
+    -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  input[type="search"]::-webkit-search-decoration,
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-results-button,
+  input[type="search"]::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+  }
+
+  /* Notch / home-indicator aware padding for full-bleed fixed UI. */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Real mobile viewport height, excluding the URL-bar jump. */
+  .min-h-dvh {
+    min-height: 100dvh;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Thin neutral scrollbar - used inside modals and popovers. */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.35);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.55);
+}
+
+/* ─── Starter typography components - 145 usages across the storefront ─────── */
+@layer components {
+  .content-container {
+    @apply max-w-[1440px] w-full mx-auto px-6;
+  }
+
+  .contrast-btn {
+    @apply px-4 py-2 border border-black rounded-full hover:bg-black hover:text-white transition-colors duration-200 ease-in;
+  }
+
+  .text-xsmall-regular {
+    @apply text-[10px] leading-4 font-normal;
+  }
+
+  .text-small-regular {
+    @apply text-xs leading-5 font-normal;
+  }
+
+  .text-small-semi {
+    @apply text-xs leading-5 font-semibold;
+  }
+
+  .text-base-regular {
+    @apply text-sm leading-6 font-normal;
+  }
+
+  .text-base-semi {
+    @apply text-sm leading-6 font-semibold;
+  }
+
+  .text-large-regular {
+    @apply text-base leading-6 font-normal;
+  }
+
+  .text-large-semi {
+    @apply text-base leading-6 font-semibold;
+  }
+
+  .text-xl-regular {
+    @apply text-2xl leading-[36px] font-normal;
+  }
+
+  .text-xl-semi {
+    @apply text-2xl leading-[36px] font-semibold;
+  }
+
+  .text-2xl-regular {
+    @apply text-[30px] leading-[48px] font-normal;
+  }
+
+  .text-2xl-semi {
+    @apply text-[30px] leading-[48px] font-semibold;
+  }
+
+  .text-3xl-regular {
+    @apply text-[32px] leading-[44px] font-normal;
+  }
+
+  .text-3xl-semi {
+    @apply text-[32px] leading-[44px] font-semibold;
+  }
+}

@@ -1,0 +1,838 @@
+import { MedusaContainer } from "@medusajs/framework"
+import {
+  ContainerRegistrationKeys,
+  ModuleRegistrationName,
+  Modules,
+  ProductStatus,
+} from "@medusajs/framework/utils"
+import {
+  createApiKeysWorkflow,
+  createCollectionsWorkflow,
+  createInventoryLevelsWorkflow,
+  createProductCategoriesWorkflow,
+  createProductTagsWorkflow,
+  createProductsWorkflow,
+  createRegionsWorkflow,
+  createSalesChannelsWorkflow,
+  createShippingOptionsWorkflow,
+  createShippingProfilesWorkflow,
+  createStockLocationsWorkflow,
+  createStoresWorkflow,
+  createTaxRegionsWorkflow,
+  linkSalesChannelsToApiKeyWorkflow,
+  linkSalesChannelsToStockLocationWorkflow,
+  updatePricePreferencesWorkflow,
+} from "@medusajs/medusa/core-flows"
+
+// Prices are decimal units, not cents. 4500 npr means NPR 4,500.00
+// Every variant carries both npr and usd so a future international region
+// can be added without re-pricing the catalogue.
+const price = (npr: number, usd: number) => [
+  { currency_code: "npr", amount: npr },
+  { currency_code: "usd", amount: usd },
+]
+
+export default async function initial_data_seed({
+  container,
+}: {
+  container: MedusaContainer
+}) {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  const link = container.resolve(ContainerRegistrationKeys.LINK)
+  const query = container.resolve(ContainerRegistrationKeys.QUERY)
+  const fulfillmentModuleService = container.resolve(
+    ModuleRegistrationName.FULFILLMENT
+  )
+
+  const countries = ["np"]
+
+  logger.info("Seeding store data...")
+  const {
+    result: [defaultSalesChannel],
+  } = await createSalesChannelsWorkflow(container).run({
+    input: {
+      salesChannelsData: [
+        {
+          name: "Default Sales Channel",
+          description: "Primary storefront channel",
+        },
+      ],
+    },
+  })
+
+  const {
+    result: [publishableApiKey],
+  } = await createApiKeysWorkflow(container).run({
+    input: {
+      api_keys: [
+        {
+          title: "Default Publishable API Key",
+          type: "publishable",
+          created_by: "",
+        },
+      ],
+    },
+  })
+
+  await linkSalesChannelsToApiKeyWorkflow(container).run({
+    input: {
+      id: publishableApiKey.id,
+      add: [defaultSalesChannel.id],
+    },
+  })
+
+  await createStoresWorkflow(container).run({
+    input: {
+      stores: [
+        {
+          name: "Nepal Souvenirs and Gifts",
+          supported_currencies: [
+            {
+              currency_code: "npr",
+              is_default: true,
+            },
+            {
+              currency_code: "usd",
+              is_default: false,
+            },
+          ],
+          default_sales_channel_id: defaultSalesChannel.id,
+        },
+      ],
+    },
+  })
+
+  logger.info("Seeding region data...")
+  const { result: regionResult } = await createRegionsWorkflow(container).run({
+    input: {
+      regions: [
+        {
+          name: "Nepal",
+          currency_code: "npr",
+          countries,
+          payment_providers: ["pp_system_default"],
+        },
+      ],
+    },
+  })
+  const region = regionResult[0]
+  logger.info("Finished seeding regions.")
+
+  logger.info("Seeding tax regions...")
+  await createTaxRegionsWorkflow(container).run({
+    input: countries.map((country_code) => ({
+      country_code,
+      provider_id: "tp_system",
+      default_tax_rate: {
+        name: "Nepal VAT",
+        code: "NP-VAT",
+        rate: 13,
+      },
+    })),
+  })
+  logger.info("Finished seeding tax regions.")
+
+  // Nepali retail prices are quoted with VAT already included, so a listed
+  // NPR 1,500 is what the customer actually pays. Medusa creates these
+  // preferences tax-exclusive by default, so flip them. They are created as a
+  // side effect of the store and region workflows above, hence the query.
+  const { data: pricePreferences } = await query.graph({
+    entity: "price_preference",
+    fields: ["id"],
+  })
+  await updatePricePreferencesWorkflow(container).run({
+    input: {
+      selector: { id: pricePreferences.map((pref) => pref.id) },
+      update: { is_tax_inclusive: true },
+    },
+  })
+  logger.info("Set prices to tax-inclusive.")
+
+  logger.info("Seeding stock location data...")
+  const { result: stockLocationResult } = await createStockLocationsWorkflow(
+    container
+  ).run({
+    input: {
+      locations: [
+        {
+          name: "Kathmandu Warehouse",
+          address: {
+            city: "Kathmandu",
+            country_code: "NP",
+            address_1: "",
+          },
+        },
+      ],
+    },
+  })
+  const stockLocation = stockLocationResult[0]
+
+  await link.create({
+    [Modules.STOCK_LOCATION]: {
+      stock_location_id: stockLocation.id,
+    },
+    [Modules.FULFILLMENT]: {
+      fulfillment_provider_id: "manual_manual",
+    },
+  })
+
+  logger.info("Seeding fulfillment data...")
+  // The default shipping profile is created by a migration script in core.
+  const { data: shippingProfileResult } = await query.graph({
+    entity: "shipping_profile",
+    fields: ["id"],
+  })
+  const standardProfile = shippingProfileResult[0]
+
+  // Ceramics, glass and framed art need protective packaging and their own
+  // shipping rate, so they live on a separate profile from everything else.
+  const { result: fragileProfileResult } = await createShippingProfilesWorkflow(
+    container
+  ).run({
+    input: {
+      data: [
+        {
+          name: "Fragile",
+          type: "fragile",
+        },
+      ],
+    },
+  })
+  const fragileProfile = fragileProfileResult[0]
+
+  const fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
+    name: "Kathmandu Warehouse delivery",
+    type: "shipping",
+    service_zones: [
+      {
+        name: "Nepal",
+        geo_zones: [
+          {
+            country_code: "np",
+            type: "country",
+          },
+        ],
+      },
+    ],
+  })
+
+  await link.create({
+    [Modules.STOCK_LOCATION]: {
+      stock_location_id: stockLocation.id,
+    },
+    [Modules.FULFILLMENT]: {
+      fulfillment_set_id: fulfillmentSet.id,
+    },
+  })
+
+  const serviceZoneId = fulfillmentSet.service_zones[0].id
+  // `as const` keeps operator narrowed to the literal "eq". Without it the
+  // extracted array widens to string and no longer satisfies RuleOperatorType.
+  const shippingRules = [
+    {
+      attribute: "enabled_in_store",
+      value: "true",
+      operator: "eq" as const,
+    },
+    {
+      attribute: "is_return",
+      value: "false",
+      operator: "eq" as const,
+    },
+  ]
+
+  await createShippingOptionsWorkflow(container).run({
+    input: [
+      {
+        name: "Standard Delivery",
+        price_type: "flat",
+        provider_id: "manual_manual",
+        service_zone_id: serviceZoneId,
+        shipping_profile_id: standardProfile.id,
+        type: {
+          label: "Standard",
+          description: "Delivered in 3-5 working days.",
+          code: "standard",
+        },
+        prices: [...price(150, 5), { region_id: region.id, amount: 150 }],
+        rules: shippingRules,
+      },
+      {
+        name: "Express Delivery",
+        price_type: "flat",
+        provider_id: "manual_manual",
+        service_zone_id: serviceZoneId,
+        shipping_profile_id: standardProfile.id,
+        type: {
+          label: "Express",
+          description: "Delivered within 24 hours inside Kathmandu Valley.",
+          code: "express",
+        },
+        prices: [...price(400, 12), { region_id: region.id, amount: 400 }],
+        rules: shippingRules,
+      },
+      {
+        name: "Fragile Handling",
+        price_type: "flat",
+        provider_id: "manual_manual",
+        service_zone_id: serviceZoneId,
+        shipping_profile_id: fragileProfile.id,
+        type: {
+          label: "Fragile",
+          description: "Crated and cushioned for ceramics, glass and framed art.",
+          code: "fragile",
+        },
+        prices: [...price(350, 10), { region_id: region.id, amount: 350 }],
+        rules: shippingRules,
+      },
+    ],
+  })
+  logger.info("Finished seeding fulfillment data.")
+
+  await linkSalesChannelsToStockLocationWorkflow(container).run({
+    input: {
+      id: stockLocation.id,
+      add: [defaultSalesChannel.id],
+    },
+  })
+  logger.info("Finished seeding stock location data.")
+
+  logger.info("Seeding category data...")
+
+  // Two pillars. Souvenirs are browsed by where they came from, gifts by who
+  // they are for and why. A product commonly sits in both trees at once.
+  const { result: pillars } = await createProductCategoriesWorkflow(
+    container
+  ).run({
+    input: {
+      product_categories: [
+        { name: "Souvenirs", is_active: true },
+        { name: "Gifts", is_active: true },
+      ],
+    },
+  })
+  const souvenirsPillar = pillars.find((c) => c.name === "Souvenirs")!
+  const giftsPillar = pillars.find((c) => c.name === "Gifts")!
+
+  const destinationNames = [
+    "Kathmandu Valley",
+    "Pokhara",
+    "Everest Region",
+    "Chitwan",
+    "Lumbini",
+    "Ilam",
+  ]
+  const { result: destinationCategories } =
+    await createProductCategoriesWorkflow(container).run({
+      input: {
+        product_categories: destinationNames.map((name) => ({
+          name,
+          is_active: true,
+          parent_category_id: souvenirsPillar.id,
+        })),
+      },
+    })
+
+  const { result: giftGroups } = await createProductCategoriesWorkflow(
+    container
+  ).run({
+    input: {
+      product_categories: [
+        {
+          name: "By Occasion",
+          is_active: true,
+          parent_category_id: giftsPillar.id,
+        },
+        {
+          name: "By Recipient",
+          is_active: true,
+          parent_category_id: giftsPillar.id,
+        },
+      ],
+    },
+  })
+  const occasionGroup = giftGroups.find((c) => c.name === "By Occasion")!
+  const recipientGroup = giftGroups.find((c) => c.name === "By Recipient")!
+
+  const { result: giftLeaves } = await createProductCategoriesWorkflow(
+    container
+  ).run({
+    input: {
+      product_categories: [
+        ...["Birthday", "Wedding", "Housewarming", "Dashain and Tihar"].map(
+          (name) => ({
+            name,
+            is_active: true,
+            parent_category_id: occasionGroup.id,
+          })
+        ),
+        ...["For Him", "For Her", "For Parents", "For Kids"].map((name) => ({
+          name,
+          is_active: true,
+          parent_category_id: recipientGroup.id,
+        })),
+      ],
+    },
+  })
+
+  const dest = (name: string) =>
+    destinationCategories.find((c) => c.name === name)!.id
+  const gift = (name: string) => giftLeaves.find((c) => c.name === name)!.id
+  logger.info("Finished seeding category data.")
+
+  logger.info("Seeding tags and collections...")
+
+  // Cross-cutting traits that apply across both pillars.
+  const tagValues = [
+    "handmade",
+    "eco-friendly",
+    "lightweight",
+    "fragile",
+    "fair-trade",
+  ]
+  const { result: tagResult } = await createProductTagsWorkflow(container).run({
+    input: {
+      product_tags: tagValues.map((value) => ({ value })),
+    },
+  })
+  const tag = (value: string) => tagResult.find((t) => t.value === value)!.id
+
+  const { result: collectionResult } = await createCollectionsWorkflow(
+    container
+  ).run({
+    input: {
+      collections: [
+        { title: "Handmade in Nepal", handle: "handmade-in-nepal" },
+        { title: "Festival Picks", handle: "festival-picks" },
+      ],
+    },
+  })
+  const handmadeCollection = collectionResult.find(
+    (c) => c.title === "Handmade in Nepal"
+  )!
+  const festivalCollection = collectionResult.find(
+    (c) => c.title === "Festival Picks"
+  )!
+  logger.info("Finished seeding tags and collections.")
+
+  logger.info("Seeding product data...")
+
+  await createProductsWorkflow(container).run({
+    input: {
+      products: [
+        {
+          title: "Pashmina Shawl",
+          handle: "pashmina-shawl",
+          description:
+            "Hand-loomed cashmere and silk shawl from the Kathmandu Valley, light enough to fold into a palm yet warm enough for a Himalayan evening.",
+          status: ProductStatus.PUBLISHED,
+          weight: 250,
+          origin_country: "np",
+          material: "Cashmere and silk",
+          shipping_profile_id: standardProfile.id,
+          collection_id: handmadeCollection.id,
+          category_ids: [dest("Kathmandu Valley"), gift("For Her")],
+          tag_ids: [tag("handmade"), tag("lightweight"), tag("fair-trade")],
+          options: [
+            { title: "Colour", values: ["Natural", "Charcoal", "Crimson"] },
+          ],
+          variants: [
+            {
+              title: "Natural",
+              sku: "PASH-NAT",
+              options: { Colour: "Natural" },
+              prices: price(4500, 34),
+            },
+            {
+              title: "Charcoal",
+              sku: "PASH-CHR",
+              options: { Colour: "Charcoal" },
+              prices: price(4500, 34),
+            },
+            {
+              title: "Crimson",
+              sku: "PASH-CRI",
+              options: { Colour: "Crimson" },
+              prices: price(4800, 36),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Tibetan Singing Bowl",
+          handle: "tibetan-singing-bowl",
+          description:
+            "Hand-hammered seven-metal bowl with a striker and cushion. Each bowl is tuned by ear, so no two ring quite alike.",
+          status: ProductStatus.PUBLISHED,
+          weight: 900,
+          origin_country: "np",
+          material: "Seven-metal alloy",
+          shipping_profile_id: fragileProfile.id,
+          collection_id: handmadeCollection.id,
+          category_ids: [dest("Kathmandu Valley"), gift("Housewarming")],
+          tag_ids: [tag("handmade"), tag("fragile")],
+          options: [
+            { title: "Size", values: ["Small 4in", "Medium 6in", "Large 8in"] },
+          ],
+          variants: [
+            {
+              title: "Small 4in",
+              sku: "BOWL-S",
+              options: { Size: "Small 4in" },
+              prices: price(3500, 26),
+            },
+            {
+              title: "Medium 6in",
+              sku: "BOWL-M",
+              options: { Size: "Medium 6in" },
+              prices: price(6500, 49),
+            },
+            {
+              title: "Large 8in",
+              sku: "BOWL-L",
+              options: { Size: "Large 8in" },
+              prices: price(11000, 83),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Thangka Painting",
+          handle: "thangka-painting",
+          description:
+            "Mineral pigment on cotton canvas, painted by Newari artists over several weeks and finished with a brocade border.",
+          status: ProductStatus.PUBLISHED,
+          weight: 600,
+          origin_country: "np",
+          material: "Cotton canvas and mineral pigment",
+          shipping_profile_id: fragileProfile.id,
+          collection_id: handmadeCollection.id,
+          category_ids: [dest("Kathmandu Valley"), gift("Wedding")],
+          tag_ids: [tag("handmade"), tag("fragile")],
+          options: [{ title: "Size", values: ["A4", "A3"] }],
+          variants: [
+            {
+              title: "A4",
+              sku: "THNK-A4",
+              options: { Size: "A4" },
+              prices: price(8000, 60),
+            },
+            {
+              title: "A3",
+              sku: "THNK-A3",
+              options: { Size: "A3" },
+              prices: price(15000, 113),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Khukuri Knife",
+          handle: "khukuri-knife",
+          description:
+            "Forged from recycled spring steel with a rosewood handle and a hand-stitched leather sheath. The working blade of the Nepali hills.",
+          status: ProductStatus.PUBLISHED,
+          weight: 700,
+          origin_country: "np",
+          material: "Spring steel and rosewood",
+          shipping_profile_id: standardProfile.id,
+          collection_id: handmadeCollection.id,
+          category_ids: [dest("Everest Region"), gift("For Him")],
+          tag_ids: [tag("handmade")],
+          options: [{ title: "Blade Length", values: ["10in", "12in"] }],
+          variants: [
+            {
+              title: "10in",
+              sku: "KHUK-10",
+              options: { "Blade Length": "10in" },
+              prices: price(5500, 41),
+            },
+            {
+              title: "12in",
+              sku: "KHUK-12",
+              options: { "Blade Length": "12in" },
+              prices: price(7500, 56),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Lokta Paper Journal",
+          handle: "lokta-paper-journal",
+          description:
+            "Bound by hand in bark paper from the Daphne shrub, harvested sustainably at altitude and naturally resistant to insects.",
+          status: ProductStatus.PUBLISHED,
+          weight: 300,
+          origin_country: "np",
+          material: "Lokta bark paper",
+          shipping_profile_id: standardProfile.id,
+          collection_id: handmadeCollection.id,
+          category_ids: [dest("Kathmandu Valley"), gift("Birthday")],
+          tag_ids: [
+            tag("handmade"),
+            tag("eco-friendly"),
+            tag("lightweight"),
+          ],
+          options: [{ title: "Size", values: ["Pocket", "A5"] }],
+          variants: [
+            {
+              title: "Pocket",
+              sku: "LOKT-PKT",
+              options: { Size: "Pocket" },
+              prices: price(800, 6),
+            },
+            {
+              title: "A5",
+              sku: "LOKT-A5",
+              options: { Size: "A5" },
+              prices: price(1400, 11),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Himalayan Prayer Flags",
+          handle: "himalayan-prayer-flags",
+          description:
+            "Cotton flags block-printed with the windhorse and traditional mantras, strung in the fixed order of the five elements.",
+          status: ProductStatus.PUBLISHED,
+          weight: 200,
+          origin_country: "np",
+          material: "Cotton",
+          shipping_profile_id: standardProfile.id,
+          category_ids: [dest("Everest Region"), gift("Housewarming")],
+          tag_ids: [tag("handmade"), tag("lightweight")],
+          options: [{ title: "Length", values: ["5m", "10m"] }],
+          variants: [
+            {
+              title: "5m",
+              sku: "FLAG-5M",
+              options: { Length: "5m" },
+              prices: price(600, 5),
+            },
+            {
+              title: "10m",
+              sku: "FLAG-10M",
+              options: { Length: "10m" },
+              prices: price(1000, 8),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Ilam Tea Sampler",
+          handle: "ilam-tea-sampler",
+          description:
+            "First and second flush orthodox black tea from the Ilam hills, packed in a reusable tin with brewing notes.",
+          status: ProductStatus.PUBLISHED,
+          weight: 400,
+          origin_country: "np",
+          material: "Whole leaf black tea",
+          shipping_profile_id: standardProfile.id,
+          collection_id: festivalCollection.id,
+          category_ids: [dest("Ilam"), gift("Dashain and Tihar")],
+          tag_ids: [tag("eco-friendly"), tag("fair-trade")],
+          options: [{ title: "Weight", values: ["100g", "250g"] }],
+          variants: [
+            {
+              title: "100g",
+              sku: "TEA-100",
+              options: { Weight: "100g" },
+              prices: price(900, 7),
+            },
+            {
+              title: "250g",
+              sku: "TEA-250",
+              options: { Weight: "250g" },
+              prices: price(2000, 15),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Bhaktapur Window Carving",
+          handle: "bhaktapur-window-carving",
+          description:
+            "A miniature of the lattice windows of Bhaktapur Durbar Square, carved in seasoned sal wood by Newari woodworkers.",
+          status: ProductStatus.PUBLISHED,
+          weight: 1500,
+          origin_country: "np",
+          material: "Sal wood",
+          shipping_profile_id: fragileProfile.id,
+          collection_id: handmadeCollection.id,
+          category_ids: [dest("Kathmandu Valley"), gift("Housewarming")],
+          tag_ids: [tag("handmade"), tag("fragile")],
+          options: [{ title: "Size", values: ["Small", "Medium"] }],
+          variants: [
+            {
+              title: "Small",
+              sku: "CARV-S",
+              options: { Size: "Small" },
+              prices: price(4500, 34),
+            },
+            {
+              title: "Medium",
+              sku: "CARV-M",
+              options: { Size: "Medium" },
+              prices: price(9000, 68),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Felted Wool Slippers",
+          handle: "felted-wool-slippers",
+          description:
+            "Wet-felted from Himalayan sheep wool by a women's cooperative near Pokhara, with a suede sole added for indoor wear.",
+          status: ProductStatus.PUBLISHED,
+          weight: 350,
+          origin_country: "np",
+          material: "Felted wool and suede",
+          shipping_profile_id: standardProfile.id,
+          collection_id: handmadeCollection.id,
+          category_ids: [dest("Pokhara"), gift("For Parents")],
+          tag_ids: [
+            tag("handmade"),
+            tag("eco-friendly"),
+            tag("lightweight"),
+            tag("fair-trade"),
+          ],
+          options: [{ title: "Size", values: ["S", "M", "L"] }],
+          variants: [
+            {
+              title: "S",
+              sku: "SLIP-S",
+              options: { Size: "S" },
+              prices: price(1800, 14),
+            },
+            {
+              title: "M",
+              sku: "SLIP-M",
+              options: { Size: "M" },
+              prices: price(1800, 14),
+            },
+            {
+              title: "L",
+              sku: "SLIP-L",
+              options: { Size: "L" },
+              prices: price(1800, 14),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Rudraksha Mala",
+          handle: "rudraksha-mala",
+          description:
+            "Prayer beads strung by hand from five-faced rudraksha seeds, finished with a cotton tassel.",
+          status: ProductStatus.PUBLISHED,
+          weight: 150,
+          origin_country: "np",
+          material: "Rudraksha seed and cotton",
+          shipping_profile_id: standardProfile.id,
+          category_ids: [dest("Lumbini"), gift("For Parents")],
+          tag_ids: [tag("handmade"), tag("lightweight")],
+          options: [{ title: "Bead Count", values: ["54", "108"] }],
+          variants: [
+            {
+              title: "54 beads",
+              sku: "MALA-54",
+              options: { "Bead Count": "54" },
+              prices: price(2500, 19),
+            },
+            {
+              title: "108 beads",
+              sku: "MALA-108",
+              options: { "Bead Count": "108" },
+              prices: price(4200, 32),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Dhaka Topi",
+          handle: "dhaka-topi",
+          description:
+            "The traditional Nepali cap, cut from handwoven dhaka cloth. No two weaves repeat the same geometric pattern.",
+          status: ProductStatus.PUBLISHED,
+          weight: 120,
+          origin_country: "np",
+          material: "Handwoven dhaka cotton",
+          shipping_profile_id: standardProfile.id,
+          collection_id: festivalCollection.id,
+          category_ids: [
+            dest("Kathmandu Valley"),
+            gift("For Him"),
+            gift("Dashain and Tihar"),
+          ],
+          tag_ids: [tag("handmade"), tag("lightweight")],
+          options: [{ title: "Size", values: ["M", "L"] }],
+          variants: [
+            {
+              title: "M",
+              sku: "TOPI-M",
+              options: { Size: "M" },
+              prices: price(1500, 11),
+            },
+            {
+              title: "L",
+              sku: "TOPI-L",
+              options: { Size: "L" },
+              prices: price(1500, 11),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Carved Elephant Figurine",
+          handle: "carved-elephant-figurine",
+          description:
+            "A one-horned rhino and elephant pair carved in the villages bordering Chitwan National Park, from sustainably felled wood.",
+          status: ProductStatus.PUBLISHED,
+          weight: 500,
+          origin_country: "np",
+          material: "Sheesham wood",
+          shipping_profile_id: standardProfile.id,
+          category_ids: [dest("Chitwan"), gift("For Kids")],
+          tag_ids: [tag("handmade"), tag("eco-friendly")],
+          options: [{ title: "Size", values: ["Small", "Large"] }],
+          variants: [
+            {
+              title: "Small",
+              sku: "ELEF-S",
+              options: { Size: "Small" },
+              prices: price(1200, 9),
+            },
+            {
+              title: "Large",
+              sku: "ELEF-L",
+              options: { Size: "Large" },
+              prices: price(2800, 21),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+      ],
+    },
+  })
+  logger.info("Finished seeding product data.")
+
+  logger.info("Seeding inventory levels...")
+
+  const { data: inventoryItems } = await query.graph({
+    entity: "inventory_item",
+    fields: ["id"],
+  })
+
+  await createInventoryLevelsWorkflow(container).run({
+    input: {
+      inventory_levels: inventoryItems.map((item) => ({
+        location_id: stockLocation.id,
+        stocked_quantity: 100,
+        inventory_item_id: item.id,
+      })),
+    },
+  })
+
+  logger.info("Finished seeding inventory levels data.")
+}
