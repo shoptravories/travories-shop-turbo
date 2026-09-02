@@ -8,6 +8,7 @@ import { buildPillars } from "@lib/util/pillars"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ProductPreview from "@modules/products/components/product-preview"
+import GiftFinderRandomizer from "./gift-finder-randomizer"
 
 export const metadata: Metadata = {
   title: "Gift finder | Nepal Souvenirs",
@@ -119,6 +120,14 @@ export default async function GiftFinderPage(props: Props) {
   const hasChoice = hasFacet || Boolean(band)
 
   const result = hasFacet ? await findGifts({ recipient, occasion }) : null
+  const giftCatalogue = giftCategoryIds.length
+    ? await listProducts({
+        countryCode,
+        queryParams: { category_id: giftCategoryIds, limit: 100 },
+      }).then(({ response }) =>
+        Array.from(new Map(response.products.map((p) => [p.id, p])).values())
+      )
+    : []
 
   let products: HttpTypes.StoreProduct[] = []
 
@@ -129,16 +138,8 @@ export default async function GiftFinderPage(props: Props) {
           queryParams: { id: result.product_ids, limit: 100 },
         }).then(({ response }) => response.products)
       : []
-  } else if (band && giftCategoryIds.length) {
-    // Repeated category_id is an OR on the store endpoint, so this is the
-    // whole gift catalogue. A product in two gift categories comes back once,
-    // but dedupe anyway rather than trust that.
-    const all = await listProducts({
-      countryCode,
-      queryParams: { category_id: giftCategoryIds, limit: 100 },
-    }).then(({ response }) => response.products)
-
-    products = Array.from(new Map(all.map((p) => [p.id, p])).values())
+  } else if (band) {
+    products = giftCatalogue
   }
 
   // Budget is applied here rather than in the API because the price depends on
@@ -240,11 +241,12 @@ export default async function GiftFinderPage(props: Props) {
 
         <div className="mt-12 small:mt-0" data-testid="finder-results">
           {!hasChoice ? (
-            <div className="border border-dashed border-ui-border-base rounded-large p-10 text-center">
-              <p className="text-base-regular text-ui-fg-subtle">
-                Pick who it is for, the occasion, or a budget, and matches appear here.
-              </p>
-            </div>
+            <GiftFinderRandomizer
+              products={giftCatalogue}
+              compact
+              title="Open the gift box if you want one instant idea"
+              description="For indecisive shoppers: tap the box, let it do the arcade-style shuffle, and it will unlock one real gift from the catalogue."
+            />
           ) : (
             <>
               <div className="flex items-baseline justify-between mb-6">
@@ -260,13 +262,26 @@ export default async function GiftFinderPage(props: Props) {
               </div>
 
               {products.length && region ? (
-                <ul className="grid grid-cols-2 medium:grid-cols-3 gap-x-6 gap-y-8">
-                  {products.map((product) => (
-                    <li key={product.id}>
-                      <ProductPreview product={product} region={region} />
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <GiftFinderRandomizer products={products} />
+
+                  <div className="mb-6 flex items-baseline justify-between gap-4">
+                    <h3 className="font-playfair text-[22px] text-brand-heading">
+                      Browse all matches
+                    </h3>
+                    <span className="text-small-regular text-ui-fg-muted">
+                      Prefer to choose yourself
+                    </span>
+                  </div>
+
+                  <ul className="grid grid-cols-2 medium:grid-cols-3 gap-x-6 gap-y-8">
+                    {products.map((product) => (
+                      <li key={product.id}>
+                        <ProductPreview product={product} region={region} />
+                      </li>
+                    ))}
+                  </ul>
+                </>
               ) : (
                 <div className="border border-dashed border-ui-border-base rounded-large p-10 text-center">
                   <p className="text-base-regular text-ui-fg-subtle">

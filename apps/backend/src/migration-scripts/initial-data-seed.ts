@@ -331,8 +331,9 @@ export default async function initial_data_seed({
 
   logger.info("Seeding category data...")
 
-  // Two pillars. Souvenirs are browsed by where they came from, gifts by who
-  // they are for and why. A product commonly sits in both trees at once.
+  // Three pillars. Souvenirs are browsed by where they came from, gifts by who
+  // they are for and why, and gear by trail use. A product commonly sits in
+  // more than one tree at once.
   const { result: pillars } = await createProductCategoriesWorkflow(
     container
   ).run({
@@ -340,11 +341,13 @@ export default async function initial_data_seed({
       product_categories: [
         { name: "Souvenirs", is_active: true },
         { name: "Gifts", is_active: true },
+        { name: "Gear", is_active: true },
       ],
     },
   })
   const souvenirsPillar = pillars.find((c) => c.name === "Souvenirs")!
   const giftsPillar = pillars.find((c) => c.name === "Gifts")!
+  const gearPillar = pillars.find((c) => c.name === "Gear")!
 
   const destinationNames = [
     "Kathmandu Valley",
@@ -386,6 +389,29 @@ export default async function initial_data_seed({
   const occasionGroup = giftGroups.find((c) => c.name === "By Occasion")!
   const recipientGroup = giftGroups.find((c) => c.name === "By Recipient")!
 
+  const { result: gearGroups } = await createProductCategoriesWorkflow(
+    container
+  ).run({
+    input: {
+      product_categories: [
+        {
+          name: "Trekking",
+          is_active: true,
+          parent_category_id: gearPillar.id,
+        },
+        {
+          name: "Mountaineering",
+          is_active: true,
+          parent_category_id: gearPillar.id,
+        },
+      ],
+    },
+  })
+  const trekkingGroup = gearGroups.find((c) => c.name === "Trekking")!
+  const mountaineeringGroup = gearGroups.find(
+    (c) => c.name === "Mountaineering"
+  )!
+
   const { result: giftLeaves } = await createProductCategoriesWorkflow(
     container
   ).run({
@@ -407,9 +433,29 @@ export default async function initial_data_seed({
     },
   })
 
+  const { result: gearLeaves } = await createProductCategoriesWorkflow(
+    container
+  ).run({
+    input: {
+      product_categories: [
+        ...["Daypacks", "Trekking Poles", "Sleeping Bags"].map((name) => ({
+          name,
+          is_active: true,
+          parent_category_id: trekkingGroup.id,
+        })),
+        ...["Ice Axes", "Crampons", "Climbing Harnesses"].map((name) => ({
+          name,
+          is_active: true,
+          parent_category_id: mountaineeringGroup.id,
+        })),
+      ],
+    },
+  })
+
   const dest = (name: string) =>
     destinationCategories.find((c) => c.name === name)!.id
   const gift = (name: string) => giftLeaves.find((c) => c.name === name)!.id
+  const gear = (name: string) => gearLeaves.find((c) => c.name === name)!.id
   logger.info("Finished seeding category data.")
 
   logger.info("Seeding tags and collections...")
@@ -436,6 +482,7 @@ export default async function initial_data_seed({
       collections: [
         { title: "Handmade in Nepal", handle: "handmade-in-nepal" },
         { title: "Festival Picks", handle: "festival-picks" },
+        { title: "Trail Essentials", handle: "trail-essentials" },
       ],
     },
   })
@@ -444,6 +491,9 @@ export default async function initial_data_seed({
   )!
   const festivalCollection = collectionResult.find(
     (c) => c.title === "Festival Picks"
+  )!
+  const trailCollection = collectionResult.find(
+    (c) => c.title === "Trail Essentials"
   )!
   logger.info("Finished seeding tags and collections.")
 
@@ -850,6 +900,126 @@ export default async function initial_data_seed({
               sku: "ELEF-L",
               options: { Size: "Large" },
               prices: price(2800, 21),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Annapurna Daypack",
+          handle: "annapurna-daypack",
+          description:
+            "A 28-litre trekking daypack with a ventilated back panel, rain cover and enough volume for a full day on the trail.",
+          status: ProductStatus.PUBLISHED,
+          weight: 980,
+          origin_country: "np",
+          material: "Ripstop nylon and aluminium stay",
+          shipping_profile_id: standardProfile.id,
+          collection_id: trailCollection.id,
+          category_ids: [gear("Daypacks")],
+          tag_ids: [tag("lightweight")],
+          options: [{ title: "Colour", values: ["Slate", "Ochre"] }],
+          variants: [
+            {
+              title: "Slate",
+              sku: "DAYP-SLT",
+              options: { Colour: "Slate" },
+              prices: price(6200, 47),
+            },
+            {
+              title: "Ochre",
+              sku: "DAYP-OCH",
+              options: { Colour: "Ochre" },
+              prices: price(6200, 47),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Langtang Down Sleeping Bag",
+          handle: "langtang-down-sleeping-bag",
+          description:
+            "A cold-weather sleeping bag rated for high camps, filled with responsibly sourced down and cut to pack small.",
+          status: ProductStatus.PUBLISHED,
+          weight: 1450,
+          origin_country: "np",
+          material: "Recycled nylon shell and down fill",
+          shipping_profile_id: standardProfile.id,
+          collection_id: trailCollection.id,
+          category_ids: [gear("Sleeping Bags")],
+          tag_ids: [tag("lightweight")],
+          options: [{ title: "Size", values: ["Regular", "Long"] }],
+          variants: [
+            {
+              title: "Regular",
+              sku: "BAG-REG",
+              options: { Size: "Regular" },
+              prices: price(12500, 94),
+            },
+            {
+              title: "Long",
+              sku: "BAG-LNG",
+              options: { Size: "Long" },
+              prices: price(13200, 100),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Summit Ice Axe",
+          handle: "summit-ice-axe",
+          description:
+            "A classic straight-shaft axe for glacier travel and steep snow, with a steel pick and adze forged for daily use.",
+          status: ProductStatus.PUBLISHED,
+          weight: 560,
+          origin_country: "np",
+          material: "Aluminium shaft and chromoly steel head",
+          shipping_profile_id: standardProfile.id,
+          collection_id: trailCollection.id,
+          category_ids: [gear("Ice Axes")],
+          tag_ids: [tag("lightweight")],
+          options: [{ title: "Length", values: ["60cm", "70cm"] }],
+          variants: [
+            {
+              title: "60cm",
+              sku: "AXE-60",
+              options: { Length: "60cm" },
+              prices: price(9800, 74),
+            },
+            {
+              title: "70cm",
+              sku: "AXE-70",
+              options: { Length: "70cm" },
+              prices: price(10200, 77),
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel.id }],
+        },
+        {
+          title: "Alpine Crampons",
+          handle: "alpine-crampons",
+          description:
+            "Twelve-point steel crampons with anti-balling plates, built for mixed approaches where rock, neve and ice all turn up in one day.",
+          status: ProductStatus.PUBLISHED,
+          weight: 1040,
+          origin_country: "np",
+          material: "Heat-treated steel and polymer bindings",
+          shipping_profile_id: standardProfile.id,
+          collection_id: trailCollection.id,
+          category_ids: [gear("Crampons")],
+          tag_ids: [],
+          options: [{ title: "Binding", values: ["Hybrid", "Step-In"] }],
+          variants: [
+            {
+              title: "Hybrid",
+              sku: "CRAM-HYB",
+              options: { Binding: "Hybrid" },
+              prices: price(11800, 89),
+            },
+            {
+              title: "Step-In",
+              sku: "CRAM-STP",
+              options: { Binding: "Step-In" },
+              prices: price(12600, 95),
             },
           ],
           sales_channels: [{ id: defaultSalesChannel.id }],
