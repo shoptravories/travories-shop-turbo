@@ -24,12 +24,19 @@ export default function CheckoutLayout({
               Back
             </span>
           </LocalizedClientLink>
+          {/* Same wordmark as the main nav - checkout is the last place the
+              brand should drop out. */}
           <LocalizedClientLink
             href="/"
-            className="txt-compact-xlarge-plus text-ui-fg-subtle hover:text-ui-fg-base uppercase"
+            className="flex flex-col items-center leading-none hover:opacity-80 transition-opacity duration-150"
             data-testid="store-link"
           >
-            Medusa Store
+            <span className="font-playfair text-base small:text-lg text-brand-primary tracking-tight">
+              Nepal Souvenirs
+            </span>
+            <span className="text-[9px] uppercase tracking-[0.18em] text-ui-fg-muted mt-0.5">
+              by Travories
+            </span>
           </LocalizedClientLink>
           <div className="flex-1 basis-0" />
         </nav>

@@ -1,6 +1,15 @@
 import { sdk } from "@lib/config"
 import { getCacheOptions } from "./cookies"
 
+const getMediaUrl = (key: string) => {
+  const base = (process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000").replace(
+    /\/+$/,
+    ""
+  )
+
+  return `${base}/media?key=${encodeURIComponent(key)}`
+}
+
 export type StoreDestination = {
   id: string
   name: string
@@ -10,6 +19,7 @@ export type StoreDestination = {
   tagline: string | null
   story?: string | null
   hero_image: string | null
+  hero_image_key?: string | null
   latitude: number | null
   longitude: number | null
   travories_url: string | null
@@ -26,6 +36,7 @@ export type StoreArtisan = {
   bio: string | null
   workshop_location: string | null
   photo: string | null
+  photo_key?: string | null
 }
 
 export type StoreDestinationDetail = StoreDestination & {
@@ -33,6 +44,31 @@ export type StoreDestinationDetail = StoreDestination & {
   product_ids: string[]
   artisans?: StoreArtisan[]
 }
+
+const normaliseDestination = (destination: StoreDestination): StoreDestination => ({
+  ...destination,
+  hero_image:
+    destination.hero_image_key && destination.hero_image_key.length > 0
+      ? getMediaUrl(destination.hero_image_key)
+      : destination.hero_image,
+})
+
+const normaliseDestinationDetail = (
+  destination: StoreDestinationDetail
+): StoreDestinationDetail => ({
+  ...destination,
+  hero_image:
+    destination.hero_image_key && destination.hero_image_key.length > 0
+      ? getMediaUrl(destination.hero_image_key)
+      : destination.hero_image,
+  artisans: (destination.artisans ?? []).map((artisan) => ({
+    ...artisan,
+    photo:
+      artisan.photo_key && artisan.photo_key.length > 0
+        ? getMediaUrl(artisan.photo_key)
+        : artisan.photo,
+  })),
+})
 
 export const listDestinations = async (): Promise<StoreDestination[]> => {
   const next = { ...(await getCacheOptions("destinations")) }
@@ -42,7 +78,7 @@ export const listDestinations = async (): Promise<StoreDestination[]> => {
       "/store/destinations",
       { next, cache: "force-cache" }
     )
-    .then(({ destinations }) => destinations)
+    .then(({ destinations }) => destinations.map(normaliseDestination))
     .catch(() => [])
 }
 
@@ -56,6 +92,6 @@ export const getDestinationBySlug = async (
       `/store/destinations/${slug}`,
       { next, cache: "force-cache" }
     )
-    .then(({ destination }) => destination)
+    .then(({ destination }) => normaliseDestinationDetail(destination))
     .catch(() => null)
 }

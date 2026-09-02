@@ -90,42 +90,48 @@ cp apps/backend/.env.template apps/backend/.env
 DATABASE_URL=postgres://postgres:@localhost:5432/medusa-dtc-starter
 ```
 
-4. Run migrations:
+4. Start local Redis for Medusa:
+
+```bash
+docker compose up -d redis
+```
+
+5. Run migrations:
 
 ```bash
 cd apps/backend
 pnpm medusa db:migrate
 ```
 
-5. Add admin user:
+6. Add admin user:
 
 ```bash
 cd apps/backend
 pnpm medusa user -e admin@test.com -p supersecret
 ```
 
-6. Start Medusa backend:
+7. Start Medusa backend:
 
 ```bash
 cd apps/backend
 pnpm dev
 ```
 
-7. Open the admin dashboard at `localhost:9000/app` and log in. Retrieve your publishable API key at Settings > Publishable API key.
+8. Open the admin dashboard at `localhost:9000/app` and log in. Retrieve your publishable API key at Settings > Publishable API key.
 
-8. Set up environment variables for the storefront:
+9. Set up environment variables for the storefront:
 
 ```bash
 cp apps/storefront/.env.template apps/storefront/.env.local
 ```
 
-9. Update `apps/storefront/.env.local` with your Medusa publishable API key:
+10. Update `apps/storefront/.env.local` with your Medusa publishable API key:
 
 ```bash
 NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_6c3...
 ```
 
-10.  Start storefront:
+11. Start storefront:
 
 ```bash
 cd apps/storefront
@@ -138,6 +144,12 @@ You can slo run the following command from the root to start both backend and st
 
 ```bash
 pnpm dev
+```
+
+Stop Redis when you do not need it:
+
+```bash
+docker compose stop redis
 ```
 
 ## Configuration

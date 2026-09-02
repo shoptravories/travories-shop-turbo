@@ -3,19 +3,21 @@
 import * as Accordion from "@radix-ui/react-accordion"
 import { useEffect, useState } from "react"
 
-import { ChevronDownMini } from "@medusajs/icons"
 import { sdk } from "@lib/config"
+import { ChevronDownMini } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
-import clsx from "clsx"
+import { clx } from "@modules/common/components/ui"
 
 type OptionsPickerProps = {
   selectedValueIds: string[]
   setOptionValueIds: (valueIds: string[]) => void
+  onClear?: () => void
 }
 
 const OptionsPicker = ({
   selectedValueIds,
   setOptionValueIds,
+  onClear,
 }: OptionsPickerProps) => {
   const [options, setOptions] = useState<HttpTypes.StoreProductOption[]>([])
   const [openItems, setOpenItems] = useState<string[]>([])
@@ -56,24 +58,31 @@ const OptionsPicker = ({
 
   return (
     <div className="flex flex-col gap-y-4">
-      <div className="flex items-center justify-between px-1">
-        <span className="txt-compact-small-plus text-ui-fg-subtle">
-          Options
+      <div className="flex items-center justify-between">
+        <span className="text-xsmall-regular uppercase tracking-[0.18em] text-brand-accent">
+          Refine
         </span>
+        {selectedValueIds.length > 0 && onClear && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="text-small-regular text-ui-fg-muted underline-offset-4 transition-colors duration-150 hover:text-brand-primary hover:underline"
+          >
+            Clear all
+          </button>
+        )}
       </div>
+
       <Accordion.Root
         type="multiple"
         value={openItems}
         onValueChange={(values) => setOpenItems(values as string[])}
-        className="flex flex-col gap-y-3 pr-6"
+        className="flex flex-col gap-y-1"
       >
         {options.map((option) => {
           const values =
             option.values
-              ?.map((value) => ({
-                id: value.id,
-                label: value.value,
-              }))
+              ?.map((value) => ({ id: value.id, label: value.value }))
               .filter(
                 (value): value is { id: string; label: string } =>
                   !!value.id && !!value.label
@@ -101,24 +110,22 @@ const OptionsPicker = ({
             <Accordion.Item
               key={option.id}
               value={option.id}
-              className="overflow-hidden"
+              className="overflow-hidden border-b border-ui-border-base last:border-b-0"
             >
               <Accordion.Header>
-                <Accordion.Trigger className="flex w-full items-center justify-between py-3 text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="txt-compact-small-plus text-ui-fg-base">
-                      {option.title || "Option"}
-                    </span>
-                    <span className="txt-compact-small-plus text-ui-fg-muted">
-                      ({selectedCount})
-                    </span>
-                  </div>
+                <Accordion.Trigger className="flex w-full items-center justify-between py-3.5 text-left">
+                  <span className="flex items-center gap-x-2 text-base-semi text-brand-primary">
+                    {option.title || "Option"}
+                    {selectedCount > 0 && (
+                      <span className="rounded-circle bg-brand-accent px-1.5 py-0.5 text-tiny text-white">
+                        {selectedCount}
+                      </span>
+                    )}
+                  </span>
                   <span
-                    className={clsx(
-                      "flex h-7 w-7 items-center justify-center text-ui-fg-muted transition-transform duration-150",
-                      {
-                        "rotate-180": isOpen,
-                      }
+                    className={clx(
+                      "flex h-6 w-6 items-center justify-center text-ui-fg-muted transition-transform duration-150",
+                      isOpen && "rotate-180"
                     )}
                   >
                     <ChevronDownMini />
@@ -133,15 +140,13 @@ const OptionsPicker = ({
                     return (
                       <button
                         key={value.id}
+                        type="button"
                         onClick={() => toggleValue(value.id)}
-                        className={clsx(
-                          "border-ui-border-base border text-small-regular h-10 rounded-rounded px-3 flex items-center transition-colors duration-150",
-                          {
-                            "border-ui-border-interactive text-ui-fg-base":
-                              isSelected,
-                            "text-ui-fg-muted hover:text-ui-fg-base":
-                              !isSelected,
-                          }
+                        className={clx(
+                          "flex h-9 items-center rounded-circle border px-3.5 text-small-regular transition-colors duration-150",
+                          isSelected
+                            ? "border-brand-primary bg-brand-primary-deep text-brand-surface"
+                            : "border-ui-border-base text-ui-fg-subtle hover:border-brand-accent/50 hover:text-brand-primary"
                         )}
                         aria-pressed={isSelected}
                       >

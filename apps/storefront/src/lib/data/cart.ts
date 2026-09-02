@@ -24,7 +24,7 @@ import { getLocale } from "./locale-actions"
 export async function retrieveCart(cartId?: string, fields?: string) {
   const id = cartId || (await getCartId())
   fields ??=
-    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
+    "*items, *region, *payment_collection, *payment_collection.payment_sessions, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
 
   if (!id) {
     return null
@@ -114,14 +114,42 @@ export async function updateCart(data: HttpTypes.StoreUpdateCart) {
     .catch(medusaError)
 }
 
+/**
+ * Trims string values and drops empty ones, so an untouched engraving field
+ * does not send `{ engraving: "" }` and blank-but-present metadata does not
+ * reach the order.
+ */
+function normaliseLineItemMetadata(
+  metadata?: Record<string, unknown>
+): Record<string, unknown> | undefined {
+  if (!metadata) {
+    return undefined
+  }
+
+  const entries = Object.entries(metadata)
+    .map(([k, v]) => [k, typeof v === "string" ? v.trim() : v] as const)
+    .filter(([, v]) => v !== undefined && v !== null && v !== "")
+
+  return entries.length ? Object.fromEntries(entries) : undefined
+}
+
 export async function addToCart({
   variantId,
   quantity,
   countryCode,
+  metadata,
 }: {
   variantId: string
   quantity: number
   countryCode: string
+  /**
+   * Line item metadata, e.g. { engraving: "For Aama" }.
+   *
+   * Trimmed here on purpose. The backend validate hook checks the trimmed form
+   * but cannot rewrite what gets stored - a validate hook receives a copy of
+   * the workflow input - so whatever is sent is what fulfilment sees.
+   */
+  metadata?: Record<string, unknown>
 }) {
   if (!variantId) {
     throw new Error("Missing variant ID when adding to cart")
@@ -137,12 +165,15 @@ export async function addToCart({
     ...(await getAuthHeaders()),
   }
 
+  const cleaned = normaliseLineItemMetadata(metadata)
+
   await sdk.store.cart
     .createLineItem(
       cart.id,
       {
         variant_id: variantId,
         quantity,
+        ...(cleaned ? { metadata: cleaned } : {}),
       },
       {},
       headers

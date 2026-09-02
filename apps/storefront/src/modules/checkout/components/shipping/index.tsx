@@ -1,6 +1,7 @@
 "use client"
 import { Radio, RadioGroup } from "@headlessui/react"
 import { setShippingMethod } from "@lib/data/cart"
+import type { RequiredShippingProfile } from "@lib/data/shipping-requirements"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
 import { CheckCircleSolid, Loader } from "@medusajs/icons"
@@ -18,6 +19,12 @@ const PICKUP_OPTION_OFF = "__PICKUP_OFF"
 type ShippingProps = {
   cart: HttpTypes.StoreCart
   availableShippingMethods: HttpTypes.StoreCartShippingOption[] | null
+  /**
+   * The shipping profiles this cart's items require. A cart mixing fragile and
+   * standard goods requires a method for EACH profile - Medusa refuses to
+   * complete the cart otherwise.
+   */
+  requiredProfiles?: RequiredShippingProfile[]
 }
 
 function formatAddress(address: HttpTypes.StoreCartAddress) {
@@ -49,6 +56,7 @@ function formatAddress(address: HttpTypes.StoreCartAddress) {
 const Shipping: React.FC<ShippingProps> = ({
   cart,
   availableShippingMethods,
+  requiredProfiles = [],
 }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingPrices, setIsLoadingPrices] = useState(true)
@@ -62,6 +70,30 @@ const Shipping: React.FC<ShippingProps> = ({
   const [shippingMethodId, setShippingMethodId] = useState<string | null>(
     cart.shipping_methods?.at(-1)?.shipping_option_id || null
   )
+
+  const profileOf = (optionId: string) =>
+    availableShippingMethods?.find((o) => o.id === optionId)
+      ?.shipping_profile_id ?? null
+
+  // Seed from the cart so an in-progress checkout survives a reload.
+  const [selectedByProfile, setSelectedByProfile] = useState<
+    Record<string, string>
+  >(() => {
+    const initial: Record<string, string> = {}
+    for (const method of cart.shipping_methods ?? []) {
+      const optionId = method.shipping_option_id
+      if (!optionId) {
+        continue
+      }
+      const profileId = availableShippingMethods?.find(
+        (o) => o.id === optionId
+      )?.shipping_profile_id
+      if (profileId) {
+        initial[profileId] = optionId
+      }
+    }
+    return initial
+  })
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -147,6 +179,51 @@ const Shipping: React.FC<ShippingProps> = ({
       })
   }
 
+  const handleSelectForProfile = async (
+    profileId: string,
+    optionId: string
+  ) => {
+    setError(null)
+    setShowPickupOptions(PICKUP_OPTION_OFF)
+
+    const previous = selectedByProfile
+    setSelectedByProfile({ ...previous, [profileId]: optionId })
+    setShippingMethodId(optionId)
+    setIsLoading(true)
+
+    await setShippingMethod({ cartId: cart.id, shippingMethodId: optionId })
+      .catch((err) => {
+        setSelectedByProfile(previous)
+        setError(err.message)
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
+  }
+
+  // Fall back to a single unlabelled group when requirements are unavailable,
+  // so this degrades to the previous behaviour rather than blocking checkout.
+  const profileGroups = requiredProfiles.length
+    ? requiredProfiles
+    : [{ id: "__all", name: "Shipping method", product_titles: [] }]
+
+  const optionsForProfile = (profileId: string) =>
+    profileId === "__all"
+      ? _shippingMethods ?? []
+      : (_shippingMethods ?? []).filter(
+          (o) => o.shipping_profile_id === profileId
+        )
+
+  const isPickup = showPickupOptions === PICKUP_OPTION_ON
+
+  const allProfilesSatisfied = requiredProfiles.length
+    ? requiredProfiles.every((p) => Boolean(selectedByProfile[p.id]))
+    : Boolean(cart.shipping_methods?.[0])
+
+  const canContinue = isPickup
+    ? Boolean(cart.shipping_methods?.[0])
+    : allProfilesSatisfied
+
   useEffect(() => {
     setError(null)
   }, [isOpen])
@@ -192,7 +269,9 @@ const Shipping: React.FC<ShippingProps> = ({
                 Shipping method
               </span>
               <span className="mb-4 text-ui-fg-muted txt-medium">
-                How would you like you order delivered
+                {requiredProfiles.length > 1
+                  ? "Your order ships in more than one way — choose a method for each group"
+                  : "How would you like your order delivered"}
               </span>
             </div>
             <div data-testid="delivery-options-container">
@@ -235,65 +314,90 @@ const Shipping: React.FC<ShippingProps> = ({
                     </Radio>
                   </RadioGroup>
                 )}
-                <RadioGroup
-                  value={shippingMethodId}
-                  onChange={(v) => {
-                    if (v) {
-                      return handleSetShippingMethod(v, "shipping")
-                    }
-                  }}
-                >
-                  {_shippingMethods?.map((option) => {
-                    const isDisabled =
-                      option.price_type === "calculated" &&
-                      !isLoadingPrices &&
-                      typeof calculatedPricesMap[option.id] !== "number"
+                {profileGroups.map((profile) => {
+                  const options = optionsForProfile(profile.id)
+                  const selected = selectedByProfile[profile.id] ?? null
 
-                    return (
-                      <Radio
-                        key={option.id}
-                        value={option.id}
-                        data-testid="delivery-option-radio"
-                        disabled={isDisabled}
-                        className={clx(
-                          "flex items-center justify-between text-small-regular cursor-pointer py-4 border rounded-rounded px-8 mb-2 hover:shadow-borders-interactive-with-active",
-                          {
-                            "border-ui-border-interactive":
-                              option.id === shippingMethodId,
-                            "hover:shadow-brders-none cursor-not-allowed":
-                              isDisabled,
-                          }
-                        )}
-                      >
-                        <div className="flex items-center gap-x-4">
-                          <MedusaRadio
-                            checked={option.id === shippingMethodId}
-                          />
-                          <span className="text-base-regular">
-                            {option.name}
+                  if (!options.length) {
+                    return null
+                  }
+
+                  return (
+                    <div key={profile.id} className="mb-6">
+                      {requiredProfiles.length > 1 && (
+                        <div className="mb-2">
+                          <span className="font-medium txt-medium text-ui-fg-base">
+                            {profile.name}
                           </span>
-                        </div>
-                        <span className="justify-self-end text-ui-fg-base">
-                          {option.price_type === "flat" ? (
-                            convertToLocale({
-                              amount: option.amount!,
-                              currency_code: cart?.currency_code,
-                            })
-                          ) : calculatedPricesMap[option.id] ? (
-                            convertToLocale({
-                              amount: calculatedPricesMap[option.id],
-                              currency_code: cart?.currency_code,
-                            })
-                          ) : isLoadingPrices ? (
-                            <Loader />
-                          ) : (
-                            "-"
+                          {profile.product_titles.length > 0 && (
+                            <span className="text-ui-fg-muted txt-medium">
+                              {" "}
+                              — {profile.product_titles.join(", ")}
+                            </span>
                           )}
-                        </span>
-                      </Radio>
-                    )
-                  })}
-                </RadioGroup>
+                        </div>
+                      )}
+
+                      <RadioGroup
+                        value={selected}
+                        onChange={(v) => {
+                          if (v) {
+                            return handleSelectForProfile(profile.id, v)
+                          }
+                        }}
+                      >
+                        {options.map((option) => {
+                          const isDisabled =
+                            option.price_type === "calculated" &&
+                            !isLoadingPrices &&
+                            typeof calculatedPricesMap[option.id] !== "number"
+
+                          return (
+                            <Radio
+                              key={option.id}
+                              value={option.id}
+                              data-testid="delivery-option-radio"
+                              disabled={isDisabled}
+                              className={clx(
+                                "flex items-center justify-between text-small-regular cursor-pointer py-4 border rounded-rounded px-8 mb-2 hover:shadow-borders-interactive-with-active",
+                                {
+                                  "border-ui-border-interactive":
+                                    option.id === selected,
+                                  "hover:shadow-brders-none cursor-not-allowed":
+                                    isDisabled,
+                                }
+                              )}
+                            >
+                              <div className="flex items-center gap-x-4">
+                                <MedusaRadio checked={option.id === selected} />
+                                <span className="text-base-regular">
+                                  {option.name}
+                                </span>
+                              </div>
+                              <span className="justify-self-end text-ui-fg-base">
+                                {option.price_type === "flat" ? (
+                                  convertToLocale({
+                                    amount: option.amount!,
+                                    currency_code: cart?.currency_code,
+                                  })
+                                ) : calculatedPricesMap[option.id] ? (
+                                  convertToLocale({
+                                    amount: calculatedPricesMap[option.id],
+                                    currency_code: cart?.currency_code,
+                                  })
+                                ) : isLoadingPrices ? (
+                                  <Loader />
+                                ) : (
+                                  "-"
+                                )}
+                              </span>
+                            </Radio>
+                          )
+                        })}
+                      </RadioGroup>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -376,7 +480,7 @@ const Shipping: React.FC<ShippingProps> = ({
               className="mt"
               onClick={handleSubmit}
               isLoading={isLoading}
-              disabled={!cart.shipping_methods?.[0]}
+              disabled={!canContinue}
               data-testid="submit-delivery-option-button"
             >
               Continue to payment
@@ -391,13 +495,18 @@ const Shipping: React.FC<ShippingProps> = ({
                 <Text className="txt-medium-plus text-ui-fg-base mb-1">
                   Method
                 </Text>
-                <Text className="txt-medium text-ui-fg-subtle">
-                  {cart.shipping_methods!.at(-1)!.name}{" "}
-                  {convertToLocale({
-                    amount: cart.shipping_methods!.at(-1)!.amount!,
-                    currency_code: cart?.currency_code,
-                  })}
-                </Text>
+                {cart.shipping_methods!.map((method) => (
+                  <Text
+                    key={method.id}
+                    className="txt-medium text-ui-fg-subtle"
+                  >
+                    {method.name}{" "}
+                    {convertToLocale({
+                      amount: method.amount!,
+                      currency_code: cart?.currency_code,
+                    })}
+                  </Text>
+                ))}
               </div>
             )}
           </div>

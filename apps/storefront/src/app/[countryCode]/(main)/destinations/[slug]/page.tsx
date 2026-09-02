@@ -4,8 +4,10 @@ import { notFound } from "next/navigation"
 import { getDestinationBySlug } from "@lib/data/destinations"
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ProductPreview from "@modules/products/components/product-preview"
+import Reveal from "@modules/common/components/reveal"
+import SectionHeading from "@modules/common/components/section-heading"
+import BrowseHeader from "@modules/store/components/browse-header"
 
 type Props = {
   params: Promise<{ countryCode: string; slug: string }>
@@ -53,34 +55,19 @@ export default async function DestinationPage(props: Props) {
 
   return (
     <>
-      <section className="bg-brand-navy text-brand-paper">
-        <div className="content-container py-14 small:py-20">
-          <LocalizedClientLink
-            href="/destinations"
-            className="text-small-regular text-brand-paper/60 hover:text-brand-paper transition-colors duration-150"
-          >
-            ← All destinations
-          </LocalizedClientLink>
-
-          <div className="mt-6 max-w-3xl">
-            {destination.region && (
-              <span className="text-xsmall-regular uppercase tracking-[0.22em] text-brand-saffron">
-                {destination.region}
-              </span>
-            )}
-            <h1 className="font-playfair text-[34px] small:text-[50px] leading-tight mt-3">
-              {destination.name}
-            </h1>
-            {destination.tagline && (
-              <p className="text-large-regular text-brand-paper/80 mt-3">
-                {destination.tagline}
-              </p>
-            )}
-          </div>
-        </div>
-      </section>
+      <BrowseHeader
+        eyebrow={destination.region ?? undefined}
+        title={destination.name}
+        description={destination.tagline}
+        crumbs={[
+          { label: "Shop", href: "/store" },
+          { label: "Destinations", href: "/destinations" },
+        ]}
+        seed={destination.slug}
+      />
 
       {destination.story && (
+        <Reveal>
         <section className="content-container py-12 small:py-16">
           <div className="max-w-2xl">
             <p className="text-base-regular small:text-large-regular text-ui-fg-subtle leading-relaxed">
@@ -92,25 +79,30 @@ export default async function DestinationPage(props: Props) {
                 href={destination.travories_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block mt-6 text-base-semi text-brand-navy hover:text-brand-terracotta transition-colors duration-150"
+                className="inline-block mt-6 text-base-semi text-brand-primary hover:text-brand-accent transition-colors duration-150"
               >
                 Plan a trip here on Travories →
               </a>
             )}
           </div>
         </section>
+        </Reveal>
       )}
 
+      <Reveal delay={60}>
       <section className="content-container pb-16">
-        <h2 className="font-playfair text-[26px] text-brand-navy mb-6">
-          {products.length
-            ? `From ${destination.name}`
-            : `Nothing from ${destination.name} yet`}
-        </h2>
+        <SectionHeading
+          eyebrow="Made here"
+          title={
+            products.length
+              ? `From ${destination.name}`
+              : `Nothing from ${destination.name} yet`
+          }
+        />
 
         {products.length ? (
           <ul
-            className="grid grid-cols-2 small:grid-cols-4 gap-x-6 gap-y-8"
+            className="grid grid-cols-2 gap-x-4 gap-y-8 small:grid-cols-4 small:gap-x-6"
             data-testid="destination-products"
           >
             {products.map((product) => (
@@ -125,22 +117,24 @@ export default async function DestinationPage(props: Props) {
           </p>
         )}
       </section>
+      </Reveal>
 
       {artisans.length > 0 && (
-        <section className="bg-brand-paper border-t border-ui-border-base">
+        <section className="bg-brand-surface border-t border-ui-border-base">
           <div className="content-container py-12 small:py-16">
-            <h2 className="font-playfair text-[26px] text-brand-navy mb-6">
-              Makers in {destination.name}
-            </h2>
+            <SectionHeading
+              eyebrow="The people behind it"
+              title={`Makers in ${destination.name}`}
+            />
             <div className="grid grid-cols-1 small:grid-cols-3 gap-6">
               {artisans.map((a) => (
                 <div
                   key={a.id}
                   className="border border-ui-border-base rounded-large bg-white p-6"
                 >
-                  <h3 className="text-large-semi text-brand-navy">{a.name}</h3>
+                  <h3 className="text-large-semi text-brand-primary">{a.name}</h3>
                   {a.craft && (
-                    <p className="text-small-regular text-brand-terracotta mt-1">
+                    <p className="text-small-regular text-brand-accent mt-1">
                       {a.craft}
                     </p>
                   )}

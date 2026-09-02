@@ -91,7 +91,7 @@ const PillarDropdown = ({ pillar }: { pillar: Pillar }) => {
                           <LocalizedClientLink
                             href={`/categories/${item.handle}`}
                             onClick={close}
-                            className="text-base-regular text-ui-fg-subtle hover:text-brand-terracotta transition-colors duration-150"
+                            className="text-base-regular text-ui-fg-subtle hover:text-brand-accent transition-colors duration-150"
                             data-testid={`nav-category-${item.handle}`}
                           >
                             {item.name}
@@ -103,11 +103,11 @@ const PillarDropdown = ({ pillar }: { pillar: Pillar }) => {
                 ))}
               </div>
 
-              <div className="border-t border-ui-border-base px-6 py-3 bg-brand-paper rounded-b-rounded">
+              <div className="border-t border-ui-border-base px-6 py-3 bg-brand-surface rounded-b-rounded">
                 <LocalizedClientLink
                   href={pillar.blurbHref ?? `/categories/${pillar.handle}`}
                   onClick={close}
-                  className="text-small-semi text-brand-navy hover:text-brand-terracotta transition-colors duration-150"
+                  className="text-small-semi text-brand-primary hover:text-brand-accent transition-colors duration-150"
                 >
                   {pillar.blurb} →
                 </LocalizedClientLink>

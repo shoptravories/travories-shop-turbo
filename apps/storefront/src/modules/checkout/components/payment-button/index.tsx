@@ -1,6 +1,6 @@
 "use client"
 
-import { isManual, isStripeLike } from "@lib/constants"
+import { isEsewa, isManual, isStripeLike } from "@lib/constants"
 import { placeOrder } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@modules/common/components/ui"
@@ -25,7 +25,10 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
     !cart.email ||
     (cart.shipping_methods?.length ?? 0) < 1
 
-  const paymentSession = cart.payment_collection?.payment_sessions?.[0]
+  const paymentSession =
+    cart.payment_collection?.payment_sessions?.find(
+      (session) => session.status === "pending"
+    ) || cart.payment_collection?.payment_sessions?.[0]
 
   switch (true) {
     case isStripeLike(paymentSession?.provider_id):
@@ -40,9 +43,79 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
       return (
         <ManualTestPaymentButton notReady={notReady} data-testid={dataTestId} />
       )
+    case isEsewa(paymentSession?.provider_id):
+      return (
+        <EsewaPaymentButton
+          cart={cart}
+          notReady={notReady}
+          paymentSession={paymentSession}
+          data-testid={dataTestId}
+        />
+      )
     default:
       return <Button disabled>Select a payment method</Button>
   }
+}
+
+type EsewaSessionData = {
+  amount?: string
+  tax_amount?: string
+  total_amount?: string
+  transaction_uuid?: string
+  product_code?: string
+  product_service_charge?: string
+  product_delivery_charge?: string
+  success_url?: string
+  failure_url?: string
+  signed_field_names?: string
+  signature?: string
+  form_action?: string
+}
+
+/**
+ * The fields getEsewaSessionData() proves are present, so building the form
+ * below needs no fallbacks. eSewa signs total_amount, transaction_uuid and
+ * product_code, so posting a blank for any of them would fail the signature
+ * check at the gateway rather than here.
+ */
+type VerifiedEsewaSessionData = EsewaSessionData &
+  Required<
+    Pick<
+      EsewaSessionData,
+      | "amount"
+      | "total_amount"
+      | "transaction_uuid"
+      | "product_code"
+      | "success_url"
+      | "failure_url"
+      | "signed_field_names"
+      | "signature"
+      | "form_action"
+    >
+  >
+
+const getEsewaSessionData = (
+  session: HttpTypes.StorePaymentSession | undefined
+): VerifiedEsewaSessionData | null => {
+  const data = session?.data as EsewaSessionData | undefined
+
+  if (
+    !data?.form_action ||
+    !data.amount ||
+    !data.total_amount ||
+    !data.transaction_uuid ||
+    !data.product_code ||
+    !data.success_url ||
+    !data.failure_url ||
+    !data.signed_field_names ||
+    !data.signature
+  ) {
+    return null
+  }
+
+  // The guard above checks every field, but narrowing individual optional
+  // properties does not re-type the object itself.
+  return data as VerifiedEsewaSessionData
 }
 
 const StripePaymentButton = ({
@@ -191,6 +264,74 @@ const ManualTestPaymentButton = ({ notReady }: { notReady: boolean }) => {
         error={errorMessage}
         data-testid="manual-payment-error-message"
       />
+    </>
+  )
+}
+
+const EsewaPaymentButton = ({
+  notReady,
+  paymentSession,
+}: {
+  cart: HttpTypes.StoreCart
+  notReady: boolean
+  paymentSession?: HttpTypes.StorePaymentSession
+  "data-testid"?: string
+}) => {
+  const [submitting, setSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const session = getEsewaSessionData(paymentSession)
+
+  const handlePayment = () => {
+    if (!session) {
+      setErrorMessage("eSewa session is not ready yet. Please reselect eSewa.")
+      return
+    }
+
+    setSubmitting(true)
+    setErrorMessage(null)
+
+    const form = document.createElement("form")
+    form.method = "POST"
+    form.action = session.form_action
+
+    const fields = {
+      amount: session.amount,
+      tax_amount: session.tax_amount || "0",
+      total_amount: session.total_amount,
+      transaction_uuid: session.transaction_uuid,
+      product_code: session.product_code,
+      product_service_charge: session.product_service_charge || "0",
+      product_delivery_charge: session.product_delivery_charge || "0",
+      success_url: session.success_url,
+      failure_url: session.failure_url,
+      signed_field_names: session.signed_field_names,
+      signature: session.signature,
+    }
+
+    for (const [name, value] of Object.entries(fields)) {
+      const input = document.createElement("input")
+      input.type = "hidden"
+      input.name = name
+      input.value = value
+      form.appendChild(input)
+    }
+
+    document.body.appendChild(form)
+    form.submit()
+  }
+
+  return (
+    <>
+      <Button
+        disabled={notReady || !session}
+        onClick={handlePayment}
+        size="large"
+        isLoading={submitting}
+        data-testid="submit-order-button"
+      >
+        Pay with eSewa
+      </Button>
+      <ErrorMessage error={errorMessage} data-testid="esewa-payment-error" />
     </>
   )
 }

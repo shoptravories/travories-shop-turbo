@@ -14,6 +14,7 @@ export const Artisan = model.define("artisan", {
   bio: model.text().nullable(),
   workshop_location: model.text().nullable(),
   photo: model.text().nullable(),
+  photo_key: model.text().nullable(),
   is_active: model.boolean().default(true),
   destination: model.belongsTo(() => Destination, {
     mappedBy: "artisans",

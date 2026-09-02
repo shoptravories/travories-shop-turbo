@@ -1,6 +1,6 @@
 "use client"
 import { RadioGroup } from "@headlessui/react"
-import { isStripeLike, paymentInfoMap } from "@lib/constants"
+import { isEsewa, isStripeLike, paymentInfoMap } from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import ErrorMessage from "@modules/checkout/components/error-message"
@@ -16,7 +16,12 @@ import {
   clx,
 } from "@modules/common/components/ui"
 import { HttpTypes } from "@medusajs/types"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 
 const Payment = ({
@@ -40,15 +45,27 @@ const Payment = ({
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
+  const params = useParams()
 
   const isOpen = searchParams.get("step") === "payment"
 
   const setPaymentMethod = async (method: string) => {
     setError(null)
     setSelectedPaymentMethod(method)
-    if (isStripeLike(method)) {
+    if (isStripeLike(method) || isEsewa(method)) {
       await initiatePaymentSession(cart, {
         provider_id: method,
+        ...(isEsewa(method)
+          ? {
+              data: {
+                cart_id: cart.id,
+                country_code:
+                  (params.countryCode as string | undefined) ||
+                  cart.shipping_address?.country_code?.toLowerCase() ||
+                  "",
+              },
+            }
+          : {}),
       })
     }
   }
@@ -88,6 +105,17 @@ const Payment = ({
       if (!checkActiveSession) {
         await initiatePaymentSession(cart, {
           provider_id: selectedPaymentMethod,
+          ...(isEsewa(selectedPaymentMethod)
+            ? {
+                data: {
+                  cart_id: cart.id,
+                  country_code:
+                    (params.countryCode as string | undefined) ||
+                    cart.shipping_address?.country_code?.toLowerCase() ||
+                    "",
+                },
+              }
+            : {}),
         })
       }
 

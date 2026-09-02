@@ -50,15 +50,15 @@ const Step = ({
   <div
     className={
       active || done
-        ? "border-l-2 border-brand-terracotta pl-6 pb-10"
+        ? "border-l-2 border-brand-accent pl-6 pb-10"
         : "border-l-2 border-ui-border-base pl-6 pb-10 opacity-50"
     }
   >
     <div className="flex items-baseline gap-3">
-      <span className="text-xsmall-regular uppercase tracking-[0.18em] text-brand-terracotta">
+      <span className="text-xsmall-regular uppercase tracking-[0.18em] text-brand-accent">
         Step {index}
       </span>
-      <h2 className="font-playfair text-[22px] text-brand-navy">{title}</h2>
+      <h2 className="font-playfair text-[22px] text-brand-primary">{title}</h2>
     </div>
     <div className="mt-4">{children}</div>
   </div>
@@ -80,8 +80,8 @@ const Choice = ({
     data-testid={testid}
     className={
       selected
-        ? "inline-block px-4 py-2.5 rounded-circle bg-brand-navy text-brand-paper text-base-semi transition-colors duration-150"
-        : "inline-block px-4 py-2.5 rounded-circle bg-brand-paper text-brand-slate text-base-regular hover:bg-brand-sand transition-colors duration-150"
+        ? "inline-block px-4 py-2.5 rounded-circle bg-brand-primary-deep text-brand-surface text-base-semi transition-colors duration-150"
+        : "inline-block px-4 py-2.5 rounded-circle bg-brand-surface text-brand-slate text-base-regular hover:bg-brand-surface-tint transition-colors duration-150"
     }
   >
     {label}
@@ -135,15 +135,15 @@ export default async function GiftFinderPage(props: Props) {
 
   return (
     <>
-      <section className="bg-brand-navy text-brand-paper">
+      <section className="bg-brand-primary-deep text-brand-surface">
         <div className="content-container py-14 small:py-16 text-center">
-          <span className="text-xsmall-regular uppercase tracking-[0.22em] text-brand-saffron">
+          <span className="text-xsmall-regular uppercase tracking-[0.22em] text-brand-accent-light">
             Not sure what to pick
           </span>
           <h1 className="font-playfair text-[32px] small:text-[44px] leading-tight mt-3">
             Gift finder
           </h1>
-          <p className="text-base-regular text-brand-paper/75 max-w-lg mx-auto mt-3">
+          <p className="text-base-regular text-brand-surface/75 max-w-lg mx-auto mt-3">
             Three questions. Answer what you know and skip the rest.
           </p>
         </div>
@@ -212,7 +212,7 @@ export default async function GiftFinderPage(props: Props) {
           {(hasFacet || budget) && (
             <LocalizedClientLink
               href="/gifts/finder"
-              className="text-small-regular text-ui-fg-muted hover:text-brand-terracotta transition-colors duration-150"
+              className="text-small-regular text-ui-fg-muted hover:text-brand-accent transition-colors duration-150"
               data-testid="finder-reset"
             >
               Start over
@@ -230,7 +230,7 @@ export default async function GiftFinderPage(props: Props) {
           ) : (
             <>
               <div className="flex items-baseline justify-between mb-6">
-                <h2 className="font-playfair text-[24px] text-brand-navy">
+                <h2 className="font-playfair text-[24px] text-brand-primary">
                   {products.length}{" "}
                   {products.length === 1 ? "match" : "matches"}
                 </h2>

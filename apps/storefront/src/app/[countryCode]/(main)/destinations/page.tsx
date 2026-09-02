@@ -1,7 +1,11 @@
 import { Metadata } from "next"
 
 import { listDestinations } from "@lib/data/destinations"
+import CraftMotif from "@modules/common/components/craft-motif"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import Reveal from "@modules/common/components/reveal"
+import BrowseHeader from "@modules/store/components/browse-header"
+import Image from "next/image"
 
 export const metadata: Metadata = {
   title: "Destinations | Nepal Souvenirs",
@@ -14,55 +18,76 @@ export default async function DestinationsPage() {
 
   return (
     <>
-      <section className="bg-brand-navy text-brand-paper">
-        <div className="content-container py-16 small:py-20 text-center">
-          <span className="text-xsmall-regular uppercase tracking-[0.22em] text-brand-saffron">
-            Shop by place
-          </span>
-          <h1 className="font-playfair text-[34px] small:text-[46px] leading-tight mt-4">
-            Destinations
-          </h1>
-          <p className="text-base-regular text-brand-paper/75 max-w-xl mx-auto mt-4">
-            Every piece is made somewhere. Start with the place you travelled,
-            or the one you are still planning.
-          </p>
-        </div>
-      </section>
+      <BrowseHeader
+        eyebrow="Shop by place"
+        title="Destinations"
+        description="Every piece is made somewhere. Start with the place you travelled, or the one you are still planning."
+        crumbs={[{ label: "Shop", href: "/store" }, { label: "Destinations" }]}
+        seed="destinations-index"
+        motif="peaks"
+      />
 
       <section className="content-container py-12 small:py-16">
         {!destinations.length ? (
-          <p className="text-base-regular text-ui-fg-subtle text-center">
+          <p className="text-center text-base-regular text-ui-fg-subtle">
             No destinations published yet.
           </p>
         ) : (
-          <div className="grid grid-cols-1 xsmall:grid-cols-2 small:grid-cols-3 gap-6">
-            {destinations.map((d) => (
-              <LocalizedClientLink
-                key={d.id}
-                href={`/destinations/${d.slug}`}
-                className="group flex flex-col justify-between border border-ui-border-base rounded-large bg-white p-6 hover:border-brand-terracotta transition-colors duration-200"
-                data-testid={`destination-card-${d.slug}`}
-              >
-                <div>
-                  {d.region && (
-                    <span className="text-xsmall-regular uppercase tracking-[0.16em] text-brand-terracotta">
-                      {d.region}
+          <div className="grid grid-cols-1 gap-6 xsmall:grid-cols-2 small:grid-cols-3">
+            {destinations.map((destination, index) => (
+              <Reveal key={destination.id} delay={index * 60} className="h-full">
+                <LocalizedClientLink
+                  href={`/destinations/${destination.slug}`}
+                  className="group relative flex h-full min-h-[20rem] flex-col justify-end overflow-hidden rounded-large border border-ui-border-base p-6 text-brand-surface transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_24px_50px_-28px_hsl(var(--brand-primary-deep)/0.6)] motion-reduce:transform-none"
+                  data-testid={`destination-card-${destination.slug}`}
+                >
+                  {destination.hero_image ? (
+                    <Image
+                      src={destination.hero_image}
+                      alt={destination.name}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 33vw"
+                      className="absolute inset-0 object-cover transition-transform duration-500 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                    />
+                  ) : (
+                    <CraftMotif
+                      seed={destination.slug}
+                      className="transition-transform duration-500 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                    />
+                  )}
+
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 bg-gradient-to-t from-brand-primary-deep via-brand-primary-deep/70 to-transparent"
+                  />
+
+                  <div className="relative">
+                    {destination.region && (
+                      <span className="text-tiny uppercase tracking-[0.18em] text-brand-accent-light">
+                        {destination.region}
+                      </span>
+                    )}
+                    <h2 className="mt-1.5 font-playfair text-[26px] leading-tight">
+                      {destination.name}
+                    </h2>
+                    {destination.tagline && (
+                      <p className="mt-2 text-small-regular text-brand-surface/75">
+                        {destination.tagline}
+                      </p>
+                    )}
+                    <span className="mt-4 inline-flex items-center gap-x-2 text-xsmall-regular text-brand-surface/60">
+                      {destination.product_count}{" "}
+                      {destination.product_count === 1 ? "piece" : "pieces"}
+                      <span
+                        aria-hidden
+                        className="transition-transform duration-200 group-hover:translate-x-1 motion-reduce:transition-none"
+                      >
+                        &rarr;
+                      </span>
                     </span>
-                  )}
-                  <h2 className="font-playfair text-[24px] leading-tight text-brand-navy mt-2">
-                    {d.name}
-                  </h2>
-                  {d.tagline && (
-                    <p className="text-base-regular text-ui-fg-subtle mt-2">
-                      {d.tagline}
-                    </p>
-                  )}
-                </div>
-                <span className="text-small-regular text-ui-fg-muted mt-6">
-                  {d.product_count}{" "}
-                  {d.product_count === 1 ? "piece" : "pieces"}
-                </span>
-              </LocalizedClientLink>
+                  </div>
+                </LocalizedClientLink>
+              </Reveal>
             ))}
           </div>
         )}

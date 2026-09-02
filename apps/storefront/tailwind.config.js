@@ -116,16 +116,20 @@ module.exports = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        // Souvenir-store brand layer, aligned to the Travories parent brand.
+        // Brand layer, taken verbatim from travories.com's own token ramp.
         // The `/ <alpha-value>` form is required for opacity modifiers
-        // (text-brand-paper/70) to work against CSS-variable colours.
+        // (text-brand-surface/70) to work against CSS-variable colours.
         brand: {
-          navy: "hsl(var(--brand-navy) / <alpha-value>)",
+          primary: "hsl(var(--brand-primary) / <alpha-value>)",
+          "primary-deep": "hsl(var(--brand-primary-deep) / <alpha-value>)",
+          accent: "hsl(var(--brand-accent) / <alpha-value>)",
+          "accent-light": "hsl(var(--brand-accent-light) / <alpha-value>)",
           slate: "hsl(var(--brand-slate) / <alpha-value>)",
-          terracotta: "hsl(var(--brand-terracotta) / <alpha-value>)",
-          saffron: "hsl(var(--brand-saffron) / <alpha-value>)",
+          surface: "hsl(var(--brand-surface) / <alpha-value>)",
+          "surface-tint": "hsl(var(--brand-surface-tint) / <alpha-value>)",
+          line: "hsl(var(--brand-line) / <alpha-value>)",
           sand: "hsl(var(--brand-sand) / <alpha-value>)",
-          paper: "hsl(var(--brand-paper) / <alpha-value>)",
+          ink: "hsl(var(--brand-ink) / <alpha-value>)",
         },
       },
       borderRadius: {

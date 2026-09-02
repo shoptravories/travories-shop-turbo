@@ -78,21 +78,25 @@ cd apps/storefront && npm run build
 
 # PART 1 — BACKEND
 
-## B1. Garage image pipeline
+## B1. Private media pipeline on Garage/VPS
 
-[Garage](https://garagehq.deuxfleurs.fr/) is S3-compatible, so Medusa's existing S3 provider talks to
-it directly. **`@medusajs/file-s3` already ships with Medusa** — no install needed.
+The VPS bucket is S3-compatible but private. That means custom media must store object keys, not
+public URLs, and reads must go back through the backend.
 
 ### Step 1 — env
 
 ```bash
 # apps/backend/.env
-S3_FILE_URL=https://media.yourdomain.com          # public base URL for served files
-S3_ENDPOINT=https://garage.yourdomain.com         # Garage API endpoint
+S3_ENDPOINT=https://bucket.your-vps.com
 S3_BUCKET=medusashop-media
-S3_REGION=garage                                  # any value; the AWS SDK demands one
+S3_REGION=garage
 S3_ACCESS_KEY_ID=...
 S3_SECRET_ACCESS_KEY=...
+
+# Provider aliases this repo also accepts:
+S3_BUCKET_NAME_PUBLIC=medusashop-media
+S3_ACCESS_KEY=...
+S3_SECRET_KEY=...
 ```
 
 Document these in `.env.template` too — never commit real values.
@@ -128,35 +132,51 @@ modules: [
 ]
 ```
 
-### Step 3 — allow the host in Next
+### Step 3 — run the migration
 
-```js
-// apps/storefront/next.config.js
-images: {
-  remotePatterns: [
-    // ...existing
-    { protocol: "https", hostname: "media.yourdomain.com" },
-  ],
-}
+```bash
+cd apps/backend
+npm exec medusa db:migrate
 ```
+
+This adds `destination.hero_image_key` and `artisan.photo_key`.
+
+### Step 4 — upload and persist keys
+
+- `POST /admin/media/upload-url` with `access: "private"`
+- upload the file to the returned presigned `PUT` URL
+- store the returned `key` in `hero_image_key` or `photo_key`
+
+`src/scripts/upload-media.ts` now does this automatically for destination and artisan assets.
+
+### Step 5 — read through the backend
+
+The storefront should keep consuming the existing destination endpoints. They now return stable
+backend media URLs under `/store/media?key=...`, which redirect to a fresh presigned download URL.
 
 ### Gotchas, in the order they will bite
 
 1. **`forcePathStyle: true` is mandatory.** Garage does not do virtual-host bucket addressing. Without
    it, every upload fails with a confusing DNS error.
 2. **`region` must be set** even though Garage ignores it — the AWS SDK refuses to initialise without one.
-3. **The bucket must be publicly readable** (or fronted by a CDN) or `file_url` returns 403 in the browser.
-4. **Registering the file module replaces the default local provider.** Admin uploads go to Garage
+3. **Do not persist presigned URLs.** They expire; store the object key only.
+4. **Storefront cache and private media conflict** if the API returns raw presigned URLs. That is
+   why the stable `/store/media` backend route exists.
+5. **Core product images are still URL-based.** Do not push private keys into `product.thumbnail`
+   or `product.images.url`; use a dedicated product-media model if products also need privacy.
+6. **Registering the file module replaces the default local provider.** Admin uploads go to Garage
    immediately. Test with one product before bulk upload.
-5. **`next/image` currently has `unoptimized: true`.** Once real images land, consider turning that off
-   — but only after `remotePatterns` is correct, or images silently fail to render.
 
 ### Verify
 
 ```bash
-cd apps/backend && npm run build     # config errors surface here
-# then: admin → Products → any product → Media → upload
-# confirm the returned URL is your S3_FILE_URL host and loads in a browser
+cd apps/backend && npm run build
+cd apps/backend && npm exec medusa db:migrate
+# then:
+# 1. POST /admin/media/upload-url
+# 2. PUT the file to the returned presigned URL
+# 3. save the returned key on a destination or artisan
+# 4. GET /store/media?key=... and confirm it redirects to a working download URL
 ```
 
 ---
@@ -237,7 +257,7 @@ Six rows to update once you have the assets and the real trek URLs.
 ```ts
 // apps/backend/src/scripts/update-destinations.ts
 const UPDATES = [
-  { slug: "everest-region", hero_image: "https://media.…/everest.jpg",
+  { slug: "everest-region", hero_image_key: "private/destinations/2026-09-01/uuid-everest.jpg",
     travories_url: "https://travories.com/treks/everest-base-camp" },
   // …five more
 ]
@@ -348,7 +368,7 @@ Tokens live in [globals.css](apps/storefront/src/styles/globals.css); the Tailwi
 [tailwind.config.js](apps/storefront/tailwind.config.js).
 
 ```
---brand-navy       218 93% 12%    primary, headers, hero
+--brand-primary    257 25% 45%    #65558f, the travories.com theme-color
 --brand-slate      213 21% 30%    body text on light
 --brand-terracotta  16 53% 46%    accents, hover, eyebrow labels
 --brand-saffron     47 99% 50%    highlights on dark only
@@ -443,7 +463,7 @@ Improvements, in order of impact:
 
 1. **Aspect-locked image** — `aspect-[3/4] overflow-hidden rounded-large` so grids never jump.
 2. **Hover** — `group-hover:scale-[1.03] transition-transform duration-500` on the image only.
-3. **Price emphasis** — price in `text-base-semi text-brand-navy`, title in `text-ui-fg-subtle`.
+3. **Price emphasis** — price in `text-base-semi text-brand-primary`, title in `text-ui-fg-subtle`.
 4. **Destination badge** — the differentiator. A small `Kathmandu Valley` chip makes the two-pillar
    model visible at a glance. Requires passing the linked destination into the card.
 5. **Sold-out state** — currently indistinguishable from in-stock.
@@ -456,7 +476,7 @@ Do 1–3 first; they apply to every grid on the site at once.
 
 Blocked on [B1](#b1-garage-image-pipeline) and real photography. When unblocked:
 
-- `hero_image` on destination pages — full-bleed, `object-cover`, with a navy gradient overlay so the
+- `hero_image` on destination pages — full-bleed, `object-cover`, with a deep-purple gradient overlay so the
   white heading text stays legible over any photo.
 - Blur-up placeholders via `next/image` `placeholder="blur"`.
 - Set `images.unoptimized: false` in `next.config.js` **after** `remotePatterns` is verified.

@@ -1,9 +1,17 @@
 import { listProducts } from "@lib/data/products"
 import { HttpTypes } from "@medusajs/types"
-import { Text } from "@modules/common/components/ui"
 
-import InteractiveLink from "@modules/common/components/interactive-link"
+import SectionHeading from "@modules/common/components/section-heading"
 import ProductPreview from "@modules/products/components/product-preview"
+
+const RAIL_LIMIT = 4
+
+const BLURBS: Record<string, string> = {
+  "handmade-in-nepal":
+    "The core of the shop - pieces made by hand in a workshop we can name.",
+  "festival-picks":
+    "What people actually buy for Dashain, Tihar and the weddings in between.",
+}
 
 export default async function ProductRail({
   collection,
@@ -13,34 +21,41 @@ export default async function ProductRail({
   region: HttpTypes.StoreRegion
 }) {
   const {
-    response: { products: pricedProducts },
+    response: { products },
   } = await listProducts({
     regionId: region.id,
     queryParams: {
       collection_id: collection.id,
+      limit: RAIL_LIMIT,
       fields: "*variants.calculated_price",
     },
   })
 
-  if (!pricedProducts) {
+  if (!products?.length) {
     return null
   }
 
   return (
-    <div className="content-container py-12 small:py-24">
-      <div className="flex justify-between mb-8">
-        <Text className="txt-xlarge">{collection.title}</Text>
-        <InteractiveLink href={`/collections/${collection.handle}`}>
-          View all
-        </InteractiveLink>
-      </div>
-      <ul className="grid grid-cols-2 small:grid-cols-3 gap-x-6 gap-y-24 small:gap-y-36">
-        {pricedProducts &&
-          pricedProducts.map((product) => (
-            <li key={product.id}>
-              <ProductPreview product={product} region={region} isFeatured />
-            </li>
-          ))}
+    <div className="content-container py-12 small:py-16">
+      <SectionHeading
+        eyebrow="Collection"
+        title={collection.title}
+        description={BLURBS[collection.handle ?? ""]}
+        href={`/collections/${collection.handle}`}
+      />
+
+      <ul
+        data-lenis-prevent
+        className="hide-scrollbar -mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 small:mx-0 small:grid small:grid-cols-4 small:gap-6 small:overflow-visible small:px-0"
+      >
+        {products.map((product) => (
+          <li
+            key={product.id}
+            className="w-[62vw] shrink-0 snap-start xsmall:w-[40vw] small:w-auto"
+          >
+            <ProductPreview product={product} region={region} isFeatured />
+          </li>
+        ))}
       </ul>
     </div>
   )

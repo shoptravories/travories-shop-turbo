@@ -22,6 +22,7 @@ import {
   linkSalesChannelsToApiKeyWorkflow,
   linkSalesChannelsToStockLocationWorkflow,
   updatePricePreferencesWorkflow,
+  updateRegionsWorkflow,
 } from "@medusajs/medusa/core-flows"
 
 // Prices are decimal units, not cents. 4500 npr means NPR 4,500.00
@@ -103,20 +104,51 @@ export default async function initial_data_seed({
   })
 
   logger.info("Seeding region data...")
-  const { result: regionResult } = await createRegionsWorkflow(container).run({
-    input: {
-      regions: [
-        {
-          name: "Nepal",
-          currency_code: "npr",
-          countries,
-          payment_providers: ["pp_system_default"],
-        },
-      ],
-    },
+  const paymentProviders = ["pp_system_default"]
+
+  if (process.env.ESEWA_PRODUCT_CODE && process.env.ESEWA_SECRET_KEY) {
+    paymentProviders.push("pp_esewa_esewa")
+  }
+
+  // createRegionsWorkflow only applies `payment_providers` when the region is
+  // created, so a database seeded before eSewa existed would keep the old
+  // provider set forever and never offer eSewa at checkout. Update in place
+  // when the region is already there.
+  const { data: existingRegions } = await query.graph({
+    entity: "region",
+    fields: ["id", "name"],
   })
-  const region = regionResult[0]
-  logger.info("Finished seeding regions.")
+  const existingRegion = existingRegions.find((r) => r.name === "Nepal")
+
+  let region: { id: string }
+
+  if (existingRegion) {
+    const { result: updated } = await updateRegionsWorkflow(container).run({
+      input: {
+        selector: { id: existingRegion.id },
+        update: { payment_providers: paymentProviders },
+      },
+    })
+    region = updated[0]
+  } else {
+    const { result: created } = await createRegionsWorkflow(container).run({
+      input: {
+        regions: [
+          {
+            name: "Nepal",
+            currency_code: "npr",
+            countries,
+            payment_providers: paymentProviders,
+          },
+        ],
+      },
+    })
+    region = created[0]
+  }
+
+  logger.info(
+    `Finished seeding regions (payment providers: ${paymentProviders.join(", ")}).`
+  )
 
   logger.info("Seeding tax regions...")
   await createTaxRegionsWorkflow(container).run({
@@ -461,6 +493,8 @@ export default async function initial_data_seed({
         {
           title: "Tibetan Singing Bowl",
           handle: "tibetan-singing-bowl",
+          // Takes an engraving; validated in workflows/hooks/add-to-cart.ts
+          metadata: { engravable: true },
           description:
             "Hand-hammered seven-metal bowl with a striker and cushion. Each bowl is tuned by ear, so no two ring quite alike.",
           status: ProductStatus.PUBLISHED,
@@ -529,6 +563,8 @@ export default async function initial_data_seed({
         {
           title: "Khukuri Knife",
           handle: "khukuri-knife",
+          // Takes an engraving; validated in workflows/hooks/add-to-cart.ts
+          metadata: { engravable: true },
           description:
             "Forged from recycled spring steel with a rosewood handle and a hand-stitched leather sheath. The working blade of the Nepali hills.",
           status: ProductStatus.PUBLISHED,
@@ -559,6 +595,8 @@ export default async function initial_data_seed({
         {
           title: "Lokta Paper Journal",
           handle: "lokta-paper-journal",
+          // Takes an engraving; validated in workflows/hooks/add-to-cart.ts
+          metadata: { engravable: true },
           description:
             "Bound by hand in bark paper from the Daphne shrub, harvested sustainably at altitude and naturally resistant to insects.",
           status: ProductStatus.PUBLISHED,
@@ -652,6 +690,8 @@ export default async function initial_data_seed({
         {
           title: "Bhaktapur Window Carving",
           handle: "bhaktapur-window-carving",
+          // Takes an engraving; validated in workflows/hooks/add-to-cart.ts
+          metadata: { engravable: true },
           description:
             "A miniature of the lattice windows of Bhaktapur Durbar Square, carved in seasoned sal wood by Newari woodworkers.",
           status: ProductStatus.PUBLISHED,
@@ -786,6 +826,8 @@ export default async function initial_data_seed({
         {
           title: "Carved Elephant Figurine",
           handle: "carved-elephant-figurine",
+          // Takes an engraving; validated in workflows/hooks/add-to-cart.ts
+          metadata: { engravable: true },
           description:
             "A one-horned rhino and elephant pair carved in the villages bordering Chitwan National Park, from sustainably felled wood.",
           status: ProductStatus.PUBLISHED,

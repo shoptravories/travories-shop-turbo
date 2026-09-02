@@ -20,6 +20,7 @@ export const Destination = model.define("destination", {
   tagline: model.text().nullable(),
   story: model.text().nullable(),
   hero_image: model.text().nullable(),
+  hero_image_key: model.text().nullable(),
   latitude: model.float().nullable(),
   longitude: model.float().nullable(),
   // Deep link to the matching trek or tour on travories.com.

@@ -9,6 +9,10 @@ export const paymentInfoMap: Record<
   string,
   { title: string; icon: React.JSX.Element }
 > = {
+  pp_esewa_esewa: {
+    title: "eSewa",
+    icon: <CreditCard />,
+  },
   pp_stripe_stripe: {
     title: "Credit card",
     icon: <CreditCard />,
@@ -48,6 +52,10 @@ export const isPaypal = (providerId?: string) => {
 }
 export const isManual = (providerId?: string) => {
   return providerId?.startsWith("pp_system_default")
+}
+
+export const isEsewa = (providerId?: string) => {
+  return providerId?.startsWith("pp_esewa")
 }
 
 // Add currencies that don't need to be divided by 100

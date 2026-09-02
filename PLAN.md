@@ -17,8 +17,7 @@ and build the second pillar's conversion path.
 | Decision | Why it matters | Default if unanswered |
 | --- | --- | --- |
 | **Real brand name** | Currently "Nepal Souvenirs / by Travories" — a placeholder | Keep the placeholder |
-| **Garage endpoint + credentials** | Needed to wire the image pipeline; nothing else blocks on it | Images stay as placeholders |
-| **Product photography** | The single biggest gap between this and a store that sells | Placeholders |
+| **Product photography** | Storage is wired, but no amount of backend work compensates for missing assets | Placeholders |
 | **`travories_url` per destination** | The cross-sell hook to the parent marketplace. Six real trek URLs needed — I will not invent them | Link renders only when set |
 | **Payment provider** | `pp_system_default` is fake; no real money moves | Blocks launch only |
 
@@ -68,58 +67,32 @@ Pure storefront work — the category tree and price filtering already exist, so
 
 ---
 
-## Phase 8 — Image pipeline with Garage
+## Phase 8 — Private media pipeline on Garage/VPS
 
-[Garage](https://garagehq.deuxfleurs.fr/) is an S3-compatible object store, so Medusa's existing S3
-file provider talks to it directly. **`@medusajs/file-s3` already ships with Medusa** — no install.
+The VPS bucket is S3-compatible but private, so the backend now uses a key-based media flow for
+custom content instead of persisting bucket URLs.
 
-### Configuration shape
+### What is done
 
-```ts
-// apps/backend/medusa-config.ts
-modules: [
-  { resolve: "./src/modules/souvenir" },
-  {
-    resolve: "@medusajs/medusa/file",
-    options: {
-      providers: [
-        {
-          resolve: "@medusajs/medusa/file-s3",
-          id: "s3",
-          options: {
-            file_url: process.env.S3_FILE_URL,          // public base URL
-            endpoint: process.env.S3_ENDPOINT,           // Garage endpoint
-            bucket: process.env.S3_BUCKET,
-            region: process.env.S3_REGION,               // Garage: any value, must be set
-            access_key_id: process.env.S3_ACCESS_KEY_ID,
-            secret_access_key: process.env.S3_SECRET_ACCESS_KEY,
-            additional_client_config: {
-              forcePathStyle: true,                      // REQUIRED for Garage
-            },
-          },
-        },
-      ],
-    },
-  },
-]
-```
+- `medusa-config.ts` conditionally registers the S3-compatible file provider against the VPS bucket
+- Admin routes mint presigned upload and download URLs
+- Destination and artisan records now support `hero_image_key` and `photo_key`
+- Store routes rewrite those keys to stable backend URLs under `/store/media?key=...`
+- `upload-media.ts` stores keys for private destination and artisan assets
+- Provider-specific env aliases are accepted for the VPS bucket credentials
 
-### Things that will bite
+### What still remains
 
-- **`forcePathStyle: true` is mandatory.** Garage does not support virtual-host-style bucket
-  addressing the way AWS does. Without it every upload 404s with a confusing DNS error.
-- **`region` must be set to something** even though Garage ignores it — the AWS SDK refuses to
-  initialise without one.
-- **Bucket must be publicly readable** (or fronted by a CDN) for `file_url` to resolve in a browser.
-- **Next.js image domains** — add the Garage host to `next.config.js` `images.remotePatterns`, or
-  `next/image` refuses to render it.
-- Registering the file module **replaces** the default local-file provider, so admin uploads start
-  going to Garage immediately. Test with one product before bulk upload.
+- Run the souvenir module migration so the new `*_key` columns exist in the database
+- Upload real destination and artisan assets and save the returned keys
+- Decide whether product images also need to move off Medusa's URL-based core fields
 
-### Then
+### Constraint that matters
 
-Once storage works: upload real photography, attach to products (admin or a script), and set
-`hero_image` on each of the six destinations.
+**Core Medusa product images are still URL-based.** That is acceptable for now because only the
+custom souvenir entities were moved to key-based private media. If product media must also be
+private, that needs a separate product-media model rather than forcing keys into `thumbnail` and
+`images.url`.
 
 ---
 
@@ -128,7 +101,7 @@ Once storage works: upload real photography, attach to products (admin or a scri
 | Task | Why | Size |
 | --- | --- | --- |
 | **Mixed-cart shipping UI** | A cart with fragile *and* standard items needs a method per profile. The API enforces this; the checkout UI does not offer it | Small–medium |
-| **Seed artisans** | The model and link exist and the destination page renders a "Makers in…" section — it needs real people, not invented ones | Small |
+| **Seed artisans** | The model, link and private photo-key storage exist — it still needs real people, not invented ones | Small |
 | **`npm run reseed` script** | Wraps drop → create → migrate → user → key; removes the two steps people forget | Small |
 | **Gift cards** | Medusa ships them natively — config plus a storefront surface | Small |
 | **Personalisation / engraving** | Custom text as line-item metadata, surfaced in admin for fulfilment | Small–medium |
@@ -155,7 +128,7 @@ Once storage works: upload real photography, attach to products (admin or a scri
 - [ ] Return and refund policy configured
 
 ### Content
-- [ ] Product photography and destination hero images
+- [ ] Product photography, destination hero images and artisan photos
 - [ ] Real brand name and logo
 - [ ] About / shipping / returns / privacy pages
 - [ ] Meta descriptions and OG images
@@ -179,7 +152,7 @@ Two rules keep the door open, both already followed:
 ```
 1. Lenis + scroll reveals        ← in progress
 2. Gift finder                   ← second pillar's conversion path
-3. Garage image pipeline         ← unblocks everything visual
+3. Run private-media migration   ← activates the new key columns
 4. Real photography              ← the biggest single visual gain
 5. Design polish pass            ← cards, states, type rhythm
 6. Mixed-cart shipping UI

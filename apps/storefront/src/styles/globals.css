@@ -3,10 +3,11 @@
 @import "tailwindcss/utilities";
 
 /* ─── Design tokens ──────────────────────────────────────────────────────────
-   Semantic shadcn-style tokens plus a brand layer aligned to the Travories
-   parent brand: navy and slate from the parent palette, warmed with terracotta
-   and saffron for the souvenir side. The primary ramp was rebuilt in navy
-   rather than the admin panel's purple - swap this block to change it back. */
+   Semantic shadcn-style tokens plus a brand layer lifted directly from
+   travories.com, so the two properties share one palette: the #65558f primary
+   ramp, the #7e5cd9 accent, the #47586e slate for body copy and the #f5f5f5
+   surface. Nothing here is invented - each value is annotated with the
+   Travories token it came from. */
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -23,35 +24,47 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 218 93% 12%;
+    --ring: 257 25% 45%;
     --radius: 0.5rem;
 
-    /* Brand layer */
-    --brand-navy: 218 93% 12%;
-    --brand-slate: 213 21% 30%;
-    --brand-terracotta: 16 53% 46%;
-    --brand-saffron: 47 99% 50%;
-    --brand-sand: 38 35% 88%;
-    --brand-paper: 38 44% 96%;
+    /* Brand layer - every value below is taken verbatim from travories.com
+       so the souvenir shop and the parent marketplace read as one company.
+       #65558f is the Travories theme-color; the rest are its own token ramp. */
+    --brand-primary: 257 25% 45%; /* #65558f - travories theme-color */
+    --brand-primary-deep: 257 25% 34%; /* #4c406b - primary-dark */
+    --brand-accent: 256 62% 61%; /* #7e5cd9 - primary-next, for light grounds */
+    --brand-accent-light: 257 20% 83%; /* #cfcadc - readable on deep purple */
+    --brand-slate: 214 22% 35%; /* #47586e - secondary-normal-hover */
+    --brand-surface: 0 0% 96%; /* #f5f5f5 - primary-background */
+    --brand-surface-tint: 260 21% 95%; /* #f0eef4 - primary-light */
+    --brand-line: 210 15% 89%; /* #e0e4e8 - primary-border */
 
-    --primary: 218 93% 12%;
-    --primary-foreground: 38 44% 96%;
-    --primary-light: #e8edf3;
-    --primary-light-hover: #dce4ee;
-    --primary-light-active: #c3d0e1;
-    --primary-normal: 218 93% 12%;
-    --primary-normal-hover: #0a2450;
-    --primary-normal-active: #061b3f;
-    --primary-dark: #041231;
-    --primary-dark-hover: #030e27;
-    --primary-dark-active: #02091a;
-    --primary-darker: #010610;
-    --primary-next: #1e4b8f;
-    --primary-background: #faf7f2;
+    /* Shop-only grounds. These two are NOT from the Travories ramp - they are
+       added here so the landing page can alternate three grounds instead of
+       two. Sand is a warm paper white that stops the page reading as grey;
+       ink is a deeper purple-black that gives the hero somewhere to sit
+       below --brand-primary-deep. */
+    --brand-sand: 38 33% 97%; /* warm paper, alternates with --brand-surface */
+    --brand-ink: 257 32% 15%; /* deepest purple-black, hero/editorial ground */
+
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --primary-light: #f0eef4;
+    --primary-light-hover: #e8e6ee;
+    --primary-light-active: #cfcadc;
+    --primary-normal: 257 25% 45%;
+    --primary-normal-hover: #5b4d81;
+    --primary-normal-active: #514472;
+    --primary-dark: #4c406b;
+    --primary-dark-hover: #3d3356;
+    --primary-dark-active: #2d2640;
+    --primary-darker: #231e32;
+    --primary-next: #7e5cd9;
+    --primary-background: #f5f5f5;
     --primary-border: #e0e4e8;
 
-    --secondary: 213 21% 30%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 256 62% 61%;
+    --secondary-foreground: 0 0% 9%;
     --secondary-light: #b2bbc6;
     --secondary-light-hover: #a3adbb;
     --secondary-light-active: #909dad;
@@ -80,9 +93,9 @@
     --input: 0 0% 14.9%;
     --ring: 0 0% 83.1%;
 
-    --primary: 38 44% 96%;
-    --primary-foreground: 218 93% 12%;
-    --primary-normal: 38 44% 96%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 257 25% 45%;
+    --primary-normal: 0 0% 98%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
   }
@@ -358,5 +371,34 @@ html.lenis body {
 
   .text-3xl-semi {
     @apply text-[32px] leading-[44px] font-semibold;
+  }
+}
+
+/* ─── Landing-page surface treatments ────────────────────────────────────────
+   Three utilities the home page leans on: a shared vertical rhythm so every
+   band breathes the same amount, a fine paper grain that keeps large flat
+   colour fields from banding, and a hairline colour that matches the brand
+   border token. */
+@layer utilities {
+  .section-y {
+    @apply py-16 small:py-24;
+  }
+
+  .section-y-lg {
+    @apply py-20 small:py-32;
+  }
+
+  /* Sits inside a `relative` parent as an absolutely positioned sibling. */
+  .grain {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.5'/></svg>");
+    background-size: 160px 160px;
+    opacity: 0.35;
+    mix-blend-mode: soft-light;
+  }
+
+  /* Display type for hero and editorial openers - Playfair wants slightly
+     negative tracking once it goes above ~40px. */
+  .text-display {
+    @apply font-playfair leading-[1.04] tracking-[-0.02em];
   }
 }

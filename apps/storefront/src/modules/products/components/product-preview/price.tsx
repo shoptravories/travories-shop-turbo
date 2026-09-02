@@ -8,22 +8,25 @@ export default async function PreviewPrice({ price }: { price: VariantPrice }) {
 
   return (
     <>
+      <Text
+        className={clx(
+          "text-base-semi",
+          price.price_type === "sale"
+            ? "text-brand-accent"
+            : "text-brand-primary"
+        )}
+        data-testid="price"
+      >
+        {price.calculated_price}
+      </Text>
       {price.price_type === "sale" && (
         <Text
-          className="line-through text-ui-fg-muted"
+          className="text-small-regular line-through text-ui-fg-muted"
           data-testid="original-price"
         >
           {price.original_price}
         </Text>
       )}
-      <Text
-        className={clx("text-ui-fg-muted", {
-          "text-ui-fg-interactive": price.price_type === "sale",
-        })}
-        data-testid="price"
-      >
-        {price.calculated_price}
-      </Text>
     </>
   )
 }

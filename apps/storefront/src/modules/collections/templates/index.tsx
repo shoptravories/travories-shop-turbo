@@ -1,11 +1,13 @@
 import { Suspense } from "react"
 
+import { OptionValueIds } from "@lib/util/product-option-filters"
+import { HttpTypes } from "@medusajs/types"
 import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
-import RefinementList from "@modules/store/components/refinement-list"
+import BrowseHeader from "@modules/store/components/browse-header"
+import BrowseToolbar from "@modules/store/components/browse-toolbar"
+import ResultCount from "@modules/store/components/result-count"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import PaginatedProducts from "@modules/store/templates/paginated-products"
-import { HttpTypes } from "@medusajs/types"
-import { OptionValueIds } from "@lib/util/product-option-filters"
 
 export default function CollectionTemplate({
   sortBy,
@@ -24,17 +26,34 @@ export default function CollectionTemplate({
   const sort = sortBy || "created_at"
 
   return (
-    <div className="flex flex-col small:flex-row small:items-start py-6 content-container">
-      <RefinementList sortBy={sort} hideOptionsPicker />
-      <div className="w-full">
-        <div className="mb-8 text-2xl-semi">
-          <h1>{collection.title}</h1>
-        </div>
+    <>
+      <BrowseHeader
+        eyebrow="Collection"
+        title={collection.title}
+        crumbs={[{ label: "Shop", href: "/store" }, { label: "Collections" }]}
+        seed={collection.handle ?? collection.id}
+        motif="flags"
+      />
+
+      <div className="content-container pb-16">
+        <BrowseToolbar
+          sortBy={sort}
+          hideFilters
+          countSlot={
+            <Suspense fallback={<span>Counting pieces</span>}>
+              <ResultCount
+                sortBy={sort}
+                collectionId={collection.id}
+                countryCode={countryCode}
+                optionValueIds={optionValueIds}
+              />
+            </Suspense>
+          }
+        />
+
         <Suspense
           fallback={
-            <SkeletonProductGrid
-              numberOfProducts={collection.products?.length}
-            />
+            <SkeletonProductGrid numberOfProducts={collection.products?.length} />
           }
         >
           <PaginatedProducts
@@ -46,6 +65,6 @@ export default function CollectionTemplate({
           />
         </Suspense>
       </div>
-    </div>
+    </>
   )
 }

@@ -14,6 +14,51 @@ type ProductListQueryParams = (HttpTypes.FindParams &
   option_value_id?: string | string[]
 }
 
+type ProductMediaMap = Record<
+  string,
+  {
+    thumbnail: string | null
+    images: HttpTypes.StoreProductImage[]
+  }
+>
+
+const applyPrivateProductMedia = async (
+  products: HttpTypes.StoreProduct[]
+): Promise<HttpTypes.StoreProduct[]> => {
+  if (!products.length) {
+    return products
+  }
+
+  const media = await sdk.client
+    .fetch<{ media: ProductMediaMap }>("/store/product-media", {
+      method: "GET",
+      query: {
+        product_id: products.map((product) => product.id),
+      },
+      cache: "force-cache",
+    })
+    .then(({ media }) => media)
+    .catch(() => null)
+
+  if (!media) {
+    return products
+  }
+
+  return products.map((product) => {
+    const productMedia = media[product.id]
+
+    if (!productMedia) {
+      return product
+    }
+
+    return {
+      ...product,
+      thumbnail: productMedia.thumbnail ?? product.thumbnail,
+      images: productMedia.images,
+    }
+  })
+}
+
 export const listProducts = async ({
   pageParam = 1,
   queryParams,
@@ -70,7 +115,7 @@ export const listProducts = async ({
           offset,
           region_id: region?.id,
           fields:
-            "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,",
+            "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,*categories,*collection,",
           ...queryParams,
         },
         headers,
@@ -78,12 +123,13 @@ export const listProducts = async ({
         cache: "force-cache",
       }
     )
-    .then(({ products, count }) => {
+    .then(async ({ products, count }) => {
+      const productsWithMedia = await applyPrivateProductMedia(products)
       const nextPage = count > offset + limit ? pageParam + 1 : null
 
       return {
         response: {
-          products,
+          products: productsWithMedia,
           count,
         },
         nextPage: nextPage,

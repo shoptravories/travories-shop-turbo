@@ -1,5 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
+import { getStoreMediaUrl } from "../../../../lib/store-media"
 
 /**
  * GET /store/destinations/:slug
@@ -24,6 +25,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       "tagline",
       "story",
       "hero_image",
+      "hero_image_key",
       "latitude",
       "longitude",
       "travories_url",
@@ -37,6 +39,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       "artisans.bio",
       "artisans.workshop_location",
       "artisans.photo",
+      "artisans.photo_key",
     ],
     filters: { slug },
   })
@@ -50,13 +53,25 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
     )
   }
 
-  const { products, ...destination } = row as typeof row & {
+  const { products, artisans, ...destination } = row as typeof row & {
     products?: { id: string }[]
+    artisans?: Array<Record<string, unknown>>
   }
 
   res.json({
     destination: {
       ...destination,
+      hero_image:
+        typeof destination.hero_image_key === "string" && destination.hero_image_key
+          ? getStoreMediaUrl(destination.hero_image_key)
+          : destination.hero_image,
+      artisans: (artisans ?? []).map((artisan) => ({
+        ...artisan,
+        photo:
+          typeof artisan.photo_key === "string" && artisan.photo_key
+            ? getStoreMediaUrl(artisan.photo_key)
+            : artisan.photo,
+      })),
       product_ids: (products ?? []).map((p) => p.id),
       product_count: (products ?? []).length,
     },

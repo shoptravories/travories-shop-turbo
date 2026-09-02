@@ -5,7 +5,7 @@ Read this before changing anything structural.
 
 **Project:** Nepal souvenir and gift marketplace on Medusa v2
 **Parent company:** [travories.com](https://travories.com) — Nepal's trek and tour booking marketplace
-**Status:** Phases 1–4 complete and verified. See [PLAN.md](PLAN.md) for what's next.
+**Status:** Phases 1–5 complete and verified, with the private Garage/VPS media pipeline now implemented for custom destination/artisan media. See [PLAN.md](PLAN.md) for what's next.
 
 ---
 
@@ -320,8 +320,24 @@ safe-area utilities, the full semantic token set, Poppins + Playfair, `tailwindc
 | `* { margin:0; padding:0; box-sizing:border-box }` | Tailwind preflight already does this correctly; the blanket version fights `@medusajs/ui` |
 
 ### Changed
-Primary ramp moved from admin purple to **Travories navy `#021639`**, plus a warm brand layer
-(terracotta, saffron, sand, paper). One clearly-marked block in `globals.css` if you want purple back.
+The palette is taken **verbatim from travories.com**, so the two properties share one identity.
+`#65558f` is the parent site's own `theme-color`; the rest are lifted from its token ramp:
+
+| Token | Value | Travories source |
+| --- | --- | --- |
+| `--brand-primary` | `#65558f` | `theme-color` / `--primary-normal` |
+| `--brand-primary-deep` | `#4c406b` | `--primary-dark` — dark bands, hero, footer |
+| `--brand-accent` | `#7e5cd9` | `--primary-next` — accents on light grounds |
+| `--brand-accent-light` | `#cfcadc` | `--primary-light-active` — accents on dark grounds |
+| `--brand-slate` | `#47586e` | `--secondary-normal-hover` — body copy |
+| `--brand-surface` | `#f5f5f5` | `--primary-background` |
+| `--brand-surface-tint` | `#f0eef4` | `--primary-light` |
+
+An earlier pass ran a navy ramp (`#021639`); it was replaced because the parent brand is purple,
+not navy. The full `--primary-*` ramp in `globals.css` now matches travories.com exactly.
+
+Two accents rather than one because contrast flips with the ground: `#7e5cd9` clears 4.75:1 on
+white but only 2.1:1 on the deep purple, where `#cfcadc` gives 5.8:1.
 
 ### Three things that must never be removed from `tailwind.config.js`
 
@@ -334,7 +350,7 @@ Primary ramp moved from admin purple to **Travories navy `#021639`**, plus a war
 - **Tailwind deep-merges colour scales.** Verified with `resolveConfig`: adding `gray-10…90` keeps
   Tailwind's `gray-100…950`, so the starter's 124 `gray-*` usages survive.
 - **CSS-variable colours need `/ <alpha-value>`** for opacity modifiers to work:
-  `hsl(var(--brand-navy) / <alpha-value>)`. Without it, `text-brand-paper/70` silently does nothing.
+  `hsl(var(--brand-primary) / <alpha-value>)`. Without it, `text-brand-surface/70` silently does nothing.
 
 ### What was built
 

@@ -1,157 +1,144 @@
-import { listCategories } from "@lib/data/categories";
-import { listCollections } from "@lib/data/collections";
-import { Text, clx } from "@modules/common/components/ui";
+import { listCategories } from "@lib/data/categories"
+import { listCollections } from "@lib/data/collections"
+import { listDestinations } from "@lib/data/destinations"
+import { categoryDepth } from "@lib/util/product-badge"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import MedusaCTA from "@modules/layout/components/medusa-cta"
+import { Text } from "@modules/common/components/ui"
 
-import LocalizedClientLink from "@modules/common/components/localized-client-link";
-import MedusaCTA from "@modules/layout/components/medusa-cta";
+const HELP_LINKS = [
+  { label: "Gift finder", href: "/gifts/finder" },
+  { label: "All products", href: "/store" },
+  { label: "Destinations", href: "/destinations" },
+  { label: "Your account", href: "/account" },
+  { label: "Cart", href: "/cart" },
+]
+
+const FooterColumn = ({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) => (
+  <div className="flex flex-col gap-y-3">
+    <span className="text-xsmall-regular uppercase tracking-[0.18em] text-brand-accent-light">
+      {title}
+    </span>
+    <ul className="flex flex-col gap-y-2 text-base-regular text-brand-surface/70">
+      {children}
+    </ul>
+  </div>
+)
 
 export default async function Footer() {
-  const { collections } = await listCollections({
-    fields: "*products",
-  });
-  const productCategories = await listCategories();
+  const [{ collections }, categories, destinations] = await Promise.all([
+    listCollections({ fields: "id, handle, title" }),
+    listCategories().catch(() => []),
+    listDestinations(),
+  ])
+
+  const giftCategories = (categories ?? [])
+    .filter((category) => categoryDepth(category) === 3)
+    .slice(0, 6)
 
   return (
-    <footer className="border-t border-ui-border-base w-full">
-      <div className="content-container flex flex-col w-full">
-        <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-40">
-          <div>
+    <footer className="bg-brand-primary-deep text-brand-surface">
+      <div className="content-container flex flex-col">
+        <div className="grid grid-cols-1 gap-10 border-b border-brand-surface/15 py-16 small:grid-cols-[1.2fr_repeat(3,minmax(0,1fr))] small:py-20">
+          <div className="flex flex-col gap-y-4">
             <LocalizedClientLink
               href="/"
-              className="txt-compact-xlarge-plus text-ui-fg-subtle hover:text-ui-fg-base uppercase"
+              className="flex flex-col leading-none transition-opacity duration-150 hover:opacity-80"
             >
-              Medusa Store
+              <span className="font-playfair text-[22px] tracking-tight">
+                Nepal Souvenirs
+              </span>
+              <span className="mt-1 text-tiny uppercase tracking-[0.2em] text-brand-surface/50">
+                by Travories
+              </span>
             </LocalizedClientLink>
-          </div>
-          <div className="text-small-regular gap-10 md:gap-x-16 grid grid-cols-2 sm:grid-cols-3">
-            {productCategories && productCategories?.length > 0 && (
-              <div className="flex flex-col gap-y-2">
-                <span className="txt-small-plus txt-ui-fg-base">
-                  Categories
-                </span>
-                <ul
-                  className="grid grid-cols-1 gap-2"
-                  data-testid="footer-categories"
-                >
-                  {productCategories?.slice(0, 6).map((c) => {
-                    if (c.parent_category) {
-                      return;
-                    }
 
-                    const children =
-                      c.category_children?.map((child) => ({
-                        name: child.name,
-                        handle: child.handle,
-                        id: child.id,
-                      })) || null;
+            <p className="max-w-xs text-base-regular text-brand-surface/65">
+              Hand-made souvenirs and gifts from Nepal. Sourced from named
+              workshops, packed in Kathmandu, sent wherever you are.
+            </p>
 
-                    return (
-                      <li
-                        className="flex flex-col gap-2 text-ui-fg-subtle txt-small"
-                        key={c.id}
-                      >
-                        <LocalizedClientLink
-                          className={clx(
-                            "hover:text-ui-fg-base",
-                            children && "txt-small-plus"
-                          )}
-                          href={`/categories/${c.handle}`}
-                          data-testid="category-link"
-                        >
-                          {c.name}
-                        </LocalizedClientLink>
-                        {children && (
-                          <ul className="grid grid-cols-1 ml-3 gap-2">
-                            {children &&
-                              children.map((child) => (
-                                <li key={child.id}>
-                                  <LocalizedClientLink
-                                    className="hover:text-ui-fg-base"
-                                    href={`/categories/${child.handle}`}
-                                    data-testid="category-link"
-                                  >
-                                    {child.name}
-                                  </LocalizedClientLink>
-                                </li>
-                              ))}
-                          </ul>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-            {collections && collections.length > 0 && (
-              <div className="flex flex-col gap-y-2">
-                <span className="txt-small-plus txt-ui-fg-base">
-                  Collections
-                </span>
-                <ul
-                  className={clx(
-                    "grid grid-cols-1 gap-2 text-ui-fg-subtle txt-small",
-                    {
-                      "grid-cols-2": (collections?.length || 0) > 3,
-                    }
-                  )}
-                >
-                  {collections?.slice(0, 6).map((c) => (
-                    <li key={c.id}>
-                      <LocalizedClientLink
-                        className="hover:text-ui-fg-base"
-                        href={`/collections/${c.handle}`}
-                      >
-                        {c.title}
-                      </LocalizedClientLink>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <div className="flex flex-col gap-y-2">
-              <span className="txt-small-plus txt-ui-fg-base">Medusa</span>
-              <ul className="grid grid-cols-1 gap-y-2 text-ui-fg-subtle txt-small">
-                <li>
-                  <a
-                    href="https://github.com/medusajs"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-ui-fg-base"
-                  >
-                    GitHub
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://docs.medusajs.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-ui-fg-base"
-                  >
-                    Documentation
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://github.com/medusajs/dtc-starter"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-ui-fg-base"
-                  >
-                    Source code
-                  </a>
-                </li>
-              </ul>
-            </div>
+            <a
+              href="https://travories.com"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-flex w-fit items-center gap-x-2 rounded-circle border border-brand-surface/30 px-5 py-2.5 text-base-semi transition-colors duration-150 hover:bg-brand-surface/10"
+            >
+              Book a trek on Travories
+              <span aria-hidden>&rarr;</span>
+            </a>
           </div>
+
+          {destinations.length > 0 && (
+            <FooterColumn title="Destinations">
+              {destinations.slice(0, 6).map((destination) => (
+                <li key={destination.id}>
+                  <LocalizedClientLink
+                    href={`/destinations/${destination.slug}`}
+                    className="transition-colors duration-150 hover:text-brand-accent-light"
+                    data-testid="footer-destination-link"
+                  >
+                    {destination.name}
+                  </LocalizedClientLink>
+                </li>
+              ))}
+            </FooterColumn>
+          )}
+
+          {giftCategories.length > 0 && (
+            <FooterColumn title="Gifts">
+              {giftCategories.map((category) => (
+                <li key={category.id}>
+                  <LocalizedClientLink
+                    href={`/categories/${category.handle}`}
+                    className="transition-colors duration-150 hover:text-brand-accent-light"
+                    data-testid="category-link"
+                  >
+                    {category.name}
+                  </LocalizedClientLink>
+                </li>
+              ))}
+            </FooterColumn>
+          )}
+
+          <FooterColumn title="Shop">
+            {HELP_LINKS.map((link) => (
+              <li key={link.href}>
+                <LocalizedClientLink
+                  href={link.href}
+                  className="transition-colors duration-150 hover:text-brand-accent-light"
+                >
+                  {link.label}
+                </LocalizedClientLink>
+              </li>
+            ))}
+            {collections?.slice(0, 3).map((collection) => (
+              <li key={collection.id}>
+                <LocalizedClientLink
+                  href={`/collections/${collection.handle}`}
+                  className="transition-colors duration-150 hover:text-brand-accent-light"
+                >
+                  {collection.title}
+                </LocalizedClientLink>
+              </li>
+            ))}
+          </FooterColumn>
         </div>
-        <div className="flex w-full mb-16 justify-between text-ui-fg-muted">
-          <Text className="txt-compact-small">
-            © {new Date().getFullYear()} Medusa Store. All rights reserved.
+
+        <div className="flex flex-col items-start justify-between gap-4 py-8 text-brand-surface/50 small:flex-row small:items-center">
+          <Text className="text-small-regular">
+            &copy; {new Date().getFullYear()} Nepal Souvenirs by Travories. All
+            prices in NPR, VAT included.
           </Text>
           <MedusaCTA />
         </div>
       </div>
     </footer>
-  );
+  )
 }

@@ -23,7 +23,7 @@ export default async function Nav() {
 
   return (
     <div className="sticky top-0 inset-x-0 z-50 group">
-      <header className="relative h-16 mx-auto border-b duration-200 bg-white border-ui-border-base">
+      <header className="relative mx-auto h-16 border-b border-ui-border-base bg-white/90 backdrop-blur duration-200 supports-[backdrop-filter]:bg-white/80">
         <nav className="content-container txt-xsmall-plus text-ui-fg-subtle flex items-center justify-between w-full h-full text-small-regular">
           <div className="flex-1 basis-0 h-full flex items-center gap-x-6">
             <div className="h-full small:hidden">
@@ -42,7 +42,7 @@ export default async function Nav() {
               className="flex flex-col items-center leading-none hover:opacity-80 transition-opacity duration-150"
               data-testid="nav-store-link"
             >
-              <span className="font-playfair text-base small:text-lg text-brand-navy tracking-tight">
+              <span className="font-playfair text-base small:text-lg text-brand-primary tracking-tight">
                 Nepal Souvenirs
               </span>
               <span className="text-[9px] uppercase tracking-[0.18em] text-ui-fg-muted mt-0.5">
@@ -54,21 +54,21 @@ export default async function Nav() {
           <div className="flex items-center gap-x-6 h-full flex-1 basis-0 justify-end">
             <div className="hidden small:flex items-center gap-x-6 h-full">
               <LocalizedClientLink
-                className="hover:text-brand-terracotta transition-colors duration-150"
+                className="transition-colors duration-150 hover:text-brand-accent"
                 href="/gifts/finder"
                 data-testid="nav-gift-finder-link"
               >
                 Gift finder
               </LocalizedClientLink>
               <LocalizedClientLink
-                className="hover:text-ui-fg-base"
+                className="transition-colors duration-150 hover:text-brand-accent"
                 href="/store"
                 data-testid="nav-store-all-link"
               >
                 All products
               </LocalizedClientLink>
               <LocalizedClientLink
-                className="hover:text-ui-fg-base"
+                className="transition-colors duration-150 hover:text-brand-accent"
                 href="/account"
                 data-testid="nav-account-link"
               >
@@ -78,7 +78,7 @@ export default async function Nav() {
             <Suspense
               fallback={
                 <LocalizedClientLink
-                  className="hover:text-ui-fg-base flex gap-2"
+                  className="flex gap-2 transition-colors duration-150 hover:text-brand-accent"
                   href="/cart"
                   data-testid="nav-cart-link"
                 >

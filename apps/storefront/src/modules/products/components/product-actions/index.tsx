@@ -1,6 +1,9 @@
 "use client"
 
 import { addToCart } from "@lib/data/cart"
+import EngravingInput, {
+  ENGRAVING_MAX_LENGTH,
+} from "@modules/products/components/engraving-input"
 import { useIntersection } from "@lib/hooks/use-in-view"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@modules/common/components/ui"
@@ -38,6 +41,12 @@ export default function ProductActions({
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [isAdding, setIsAdding] = useState(false)
+  const [engraving, setEngraving] = useState("")
+
+  // Flagged per product in the admin; the backend refuses an engraving on
+  // anything without it, so the field must not appear here either.
+  const isEngravable = product.metadata?.engravable === true
+  const engravingTooLong = engraving.trim().length > ENGRAVING_MAX_LENGTH
   const countryCode = useParams().countryCode as string
 
   // If there is only 1 variant, preselect the options
@@ -130,8 +139,11 @@ export default function ProductActions({
       variantId: selectedVariant.id,
       quantity: 1,
       countryCode,
+      metadata:
+        isEngravable && engraving.trim() ? { engraving } : undefined,
     })
 
+    setEngraving("")
     setIsAdding(false)
   }
 
@@ -162,6 +174,16 @@ export default function ProductActions({
 
         <ProductPrice product={product} variant={selectedVariant} />
 
+        {isEngravable && (
+          <div className="mt-2 mb-1">
+            <EngravingInput
+              value={engraving}
+              onChange={setEngraving}
+              disabled={!!disabled || isAdding}
+            />
+          </div>
+        )}
+
         <Button
           onClick={handleAddToCart}
           disabled={
@@ -169,7 +191,8 @@ export default function ProductActions({
             !selectedVariant ||
             !!disabled ||
             isAdding ||
-            !isValidVariant
+            !isValidVariant ||
+            engravingTooLong
           }
           variant="primary"
           className="w-full h-10"
@@ -180,6 +203,8 @@ export default function ProductActions({
             ? "Select variant"
             : !inStock || !isValidVariant
             ? "Out of stock"
+            : engravingTooLong
+            ? "Engraving too long"
             : "Add to cart"}
         </Button>
         <MobileActions
