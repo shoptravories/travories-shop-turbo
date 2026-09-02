@@ -47,7 +47,7 @@ const PillarCard = ({ pillar }: { pillar: Pillar }) => {
             {copy.eyebrow}
           </span>
         )}
-        <h3 className="mt-3 text-display text-[30px] text-brand-primary small:text-[34px]">
+        <h3 className="mt-3 text-display text-[30px] text-brand-heading small:text-[34px]">
           {pillar.name}
         </h3>
         {copy && (

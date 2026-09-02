@@ -128,6 +128,7 @@ module.exports = {
           surface: "hsl(var(--brand-surface) / <alpha-value>)",
           "surface-tint": "hsl(var(--brand-surface-tint) / <alpha-value>)",
           line: "hsl(var(--brand-line) / <alpha-value>)",
+          heading: "hsl(var(--brand-heading) / <alpha-value>)",
           sand: "hsl(var(--brand-sand) / <alpha-value>)",
           ink: "hsl(var(--brand-ink) / <alpha-value>)",
         },

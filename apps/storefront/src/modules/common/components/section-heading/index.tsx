@@ -58,7 +58,7 @@ const SectionHeading = ({
         <h2
           className={clx(
             "mt-3 text-display text-[30px] small:text-[42px]",
-            dark ? "text-brand-surface" : "text-brand-primary"
+            dark ? "text-brand-surface" : "text-brand-heading"
           )}
         >
           {title}

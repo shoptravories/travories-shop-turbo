@@ -46,7 +46,7 @@ const AssuranceStrip = () => {
             <span className="text-tiny uppercase tracking-[0.18em] text-brand-accent">
               {String(index + 1).padStart(2, "0")}
             </span>
-            <h3 className="text-base-semi text-brand-primary">
+            <h3 className="text-base-semi text-brand-heading">
               {promise.title}
             </h3>
             <p className="text-small-regular leading-5 text-brand-slate/80">

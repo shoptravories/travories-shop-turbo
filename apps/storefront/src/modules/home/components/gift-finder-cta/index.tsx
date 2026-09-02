@@ -33,7 +33,7 @@ const GiftFinderCta = () => {
             <span aria-hidden className="h-px w-6 bg-brand-accent/50" />
             Not sure what to pick
           </span>
-          <h2 className="mt-3 max-w-lg text-display text-[28px] text-brand-primary small:text-[38px]">
+          <h2 className="mt-3 max-w-lg text-display text-[28px] text-brand-heading small:text-[38px]">
             Answer three questions, get a shortlist
           </h2>
           <p className="mt-3 max-w-lg text-base-regular text-brand-slate/80">

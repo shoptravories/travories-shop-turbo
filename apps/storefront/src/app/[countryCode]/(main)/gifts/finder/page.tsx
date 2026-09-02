@@ -5,6 +5,7 @@ import { BUDGET_BANDS, budgetBand, findGifts } from "@lib/data/gift-finder"
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { buildPillars } from "@lib/util/pillars"
+import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ProductPreview from "@modules/products/components/product-preview"
 
@@ -58,7 +59,7 @@ const Step = ({
       <span className="text-xsmall-regular uppercase tracking-[0.18em] text-brand-accent">
         Step {index}
       </span>
-      <h2 className="font-playfair text-[22px] text-brand-primary">{title}</h2>
+      <h2 className="font-playfair text-[22px] text-brand-heading">{title}</h2>
     </div>
     <div className="mt-4">{children}</div>
   </div>
@@ -105,18 +106,40 @@ export default async function GiftFinderPage(props: Props) {
   const occasions =
     gifts?.groups.find((g) => g.title === "By Occasion")?.items ?? []
 
+  // Every leaf gift category - the search space when budget is the only
+  // answer given.
+  const giftCategoryIds = (gifts?.groups ?? []).flatMap((g) =>
+    g.items.map((i) => i.id)
+  )
+
   const hasFacet = Boolean(recipient || occasion)
   const band = budgetBand(budget)
+  // Budget stands on its own. The page promises you can skip the questions
+  // you do not have an answer to, so a budget alone still has to search.
+  const hasChoice = hasFacet || Boolean(band)
 
-  // Only query once at least one facet is chosen.
   const result = hasFacet ? await findGifts({ recipient, occasion }) : null
 
-  let products = result?.product_ids.length
-    ? await listProducts({
-        countryCode,
-        queryParams: { id: result.product_ids, limit: 100 },
-      }).then(({ response }) => response.products)
-    : []
+  let products: HttpTypes.StoreProduct[] = []
+
+  if (hasFacet) {
+    products = result?.product_ids.length
+      ? await listProducts({
+          countryCode,
+          queryParams: { id: result.product_ids, limit: 100 },
+        }).then(({ response }) => response.products)
+      : []
+  } else if (band && giftCategoryIds.length) {
+    // Repeated category_id is an OR on the store endpoint, so this is the
+    // whole gift catalogue. A product in two gift categories comes back once,
+    // but dedupe anyway rather than trust that.
+    const all = await listProducts({
+      countryCode,
+      queryParams: { category_id: giftCategoryIds, limit: 100 },
+    }).then(({ response }) => response.products)
+
+    products = Array.from(new Map(all.map((p) => [p.id, p])).values())
+  }
 
   // Budget is applied here rather than in the API because the price depends on
   // the region the shopper is browsing in.
@@ -170,7 +193,7 @@ export default async function GiftFinderPage(props: Props) {
           <Step
             index={2}
             title="What is the occasion?"
-            active={Boolean(recipient) || Boolean(occasion)}
+            active
             done={Boolean(occasion)}
           >
             <div className="flex flex-wrap gap-2">
@@ -188,12 +211,7 @@ export default async function GiftFinderPage(props: Props) {
             </div>
           </Step>
 
-          <Step
-            index={3}
-            title="Budget?"
-            active={hasFacet}
-            done={Boolean(budget)}
-          >
+          <Step index={3} title="Budget?" active done={Boolean(budget)}>
             <div className="flex flex-wrap gap-2">
               {BUDGET_BANDS.map((b) => (
                 <Choice
@@ -209,7 +227,7 @@ export default async function GiftFinderPage(props: Props) {
             </div>
           </Step>
 
-          {(hasFacet || budget) && (
+          {hasChoice && (
             <LocalizedClientLink
               href="/gifts/finder"
               className="text-small-regular text-ui-fg-muted hover:text-brand-accent transition-colors duration-150"
@@ -221,16 +239,16 @@ export default async function GiftFinderPage(props: Props) {
         </div>
 
         <div className="mt-12 small:mt-0" data-testid="finder-results">
-          {!hasFacet ? (
+          {!hasChoice ? (
             <div className="border border-dashed border-ui-border-base rounded-large p-10 text-center">
               <p className="text-base-regular text-ui-fg-subtle">
-                Pick who it is for, or the occasion, and matches appear here.
+                Pick who it is for, the occasion, or a budget, and matches appear here.
               </p>
             </div>
           ) : (
             <>
               <div className="flex items-baseline justify-between mb-6">
-                <h2 className="font-playfair text-[24px] text-brand-primary">
+                <h2 className="font-playfair text-[24px] text-brand-heading">
                   {products.length}{" "}
                   {products.length === 1 ? "match" : "matches"}
                 </h2>

@@ -27,7 +27,6 @@ const DestinationRail = async () => {
       />
 
       <ul
-        data-lenis-prevent
         className="hide-scrollbar -mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 small:mx-0 small:grid small:grid-cols-3 small:gap-6 small:overflow-visible small:px-0"
       >
         {destinations.map((destination) => (

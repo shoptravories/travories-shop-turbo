@@ -22,7 +22,7 @@ const SLOTS: {
   {
     fallbackSeed: "pashmina-shawl",
     fallbackMotif: "lattice",
-    desktop: "left-0 top-8 h-56 w-48 -rotate-6 medium:h-60 medium:w-52",
+    desktop: "left-0 top-4 h-56 w-48 -rotate-6 medium:h-60 medium:w-52",
   },
   {
     fallbackSeed: "himalayan-prayer-flags",
@@ -32,7 +32,7 @@ const SLOTS: {
   {
     fallbackSeed: "tibetan-singing-bowl",
     fallbackMotif: "mandala",
-    desktop: "bottom-2 left-[22%] h-52 w-52 -rotate-2 medium:h-56 medium:w-56",
+    desktop: "bottom-0 left-[28%] h-52 w-52 -rotate-2 medium:h-56 medium:w-56",
   },
 ]
 

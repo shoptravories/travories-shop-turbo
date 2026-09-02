@@ -11,7 +11,7 @@ const TravoriesBand = () => {
             <span aria-hidden className="h-px w-6 bg-brand-accent/50" />
             The other half of the trip
           </span>
-          <p className="mt-3 max-w-xl text-large-regular text-brand-primary small:text-[19px] small:leading-7">
+          <p className="mt-3 max-w-xl text-large-regular text-brand-heading small:text-[19px] small:leading-7">
             Travories books the treks and tours these places belong to. If you
             have not been yet, start there.
           </p>

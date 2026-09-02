@@ -45,7 +45,13 @@
        ink is a deeper purple-black that gives the hero somewhere to sit
        below --brand-primary-deep. */
     --brand-sand: 38 33% 97%; /* warm paper, alternates with --brand-surface */
-    --brand-ink: 257 32% 15%; /* deepest purple-black, hero/editorial ground */
+    --brand-ink: 256 18% 13%; /* deepest purple-black, hero/editorial ground */
+
+    /* Reading colour for headings and product titles. The brand purple was
+       carrying every heading, price and title on the page, which left it no
+       contrast to work with as an accent. Headings sit on this near-black
+       instead, and --brand-primary / --brand-accent are spent sparingly. */
+    --brand-heading: 257 16% 21%;
 
     --primary: 0 0% 9%;
     --primary-foreground: 0 0% 98%;
@@ -181,37 +187,6 @@
 
 html {
   scrollbar-gutter: stable;
-}
-
-/* ─── Lenis smooth scroll ────────────────────────────────────────────────────
-   Required base rules, inlined from lenis/dist/lenis.css. The `lenis` class is
-   added to <html> by the library only when it initialises, so none of this
-   applies under prefers-reduced-motion. */
-html.lenis,
-html.lenis body {
-  height: auto;
-}
-
-.lenis:not(.lenis-autoToggle).lenis-stopped {
-  overflow: clip;
-}
-
-.lenis [data-lenis-prevent],
-.lenis [data-lenis-prevent-wheel],
-.lenis [data-lenis-prevent-touch],
-.lenis [data-lenis-prevent-vertical],
-.lenis [data-lenis-prevent-horizontal] {
-  overscroll-behavior: contain;
-}
-
-.lenis.lenis-smooth iframe {
-  pointer-events: none;
-}
-
-.lenis.lenis-autoToggle {
-  transition-property: overflow;
-  transition-duration: 1ms;
-  transition-behavior: allow-discrete;
 }
 
 /* ─── Starter utilities - required by the Medusa storefront components ─────── */
@@ -381,11 +356,11 @@ html.lenis body {
    border token. */
 @layer utilities {
   .section-y {
-    @apply py-16 small:py-24;
+    @apply py-20 small:py-28;
   }
 
   .section-y-lg {
-    @apply py-20 small:py-32;
+    @apply py-24 small:py-36;
   }
 
   /* Sits inside a `relative` parent as an absolutely positioned sibling. */

@@ -57,7 +57,7 @@ export default async function ProductPreview({
           )}
 
           <h3
-            className="text-base-regular text-brand-primary transition-colors duration-200 group-hover:text-brand-accent"
+            className="text-base-regular text-brand-heading transition-colors duration-200 group-hover:text-brand-accent"
             data-testid="product-title"
           >
             {product.title}
