@@ -2,6 +2,7 @@ import type { Pillar } from "@modules/layout/components/pillar-nav"
 import CraftMotif from "@modules/common/components/craft-motif"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import SectionHeading from "@modules/common/components/section-heading"
+import { Stagger, StaggerItem } from "@modules/common/components/stagger"
 
 const COPY: Record<
   string,
@@ -26,7 +27,7 @@ const PillarCard = ({ pillar }: { pillar: Pillar }) => {
   const chips = pillar.groups.flatMap((group) => group.items).slice(0, 8)
 
   return (
-    <div className="group relative flex flex-col justify-between overflow-hidden rounded-large bg-white p-8 ring-1 ring-inset ring-brand-line transition-all duration-300 ease-out hover:-translate-y-1.5 hover:ring-brand-accent/40 hover:shadow-[0_28px_56px_-32px_hsl(var(--brand-ink)/0.4)] motion-reduce:transform-none small:p-10">
+    <div className="group relative flex flex-col justify-between overflow-hidden h-full rounded-card bg-white p-8 ring-1 ring-inset ring-brand-line transition-all duration-500 ease-sleek hover:-translate-y-1.5 hover:ring-brand-accent/40 hover:shadow-[0_28px_56px_-32px_hsl(var(--brand-ink)/0.4)] motion-reduce:transform-none small:p-10">
       {/* A quiet corner of generated artwork so the two cards read as objects
           rather than two boxes of text. */}
       <div
@@ -103,11 +104,13 @@ const PillarSplit = ({ pillars }: { pillars: Pillar[] }) => {
         align="center"
       />
 
-      <div className="grid grid-cols-1 gap-6 small:grid-cols-2">
+      <Stagger className="grid grid-cols-1 gap-6 small:grid-cols-2">
         {pillars.map((pillar) => (
-          <PillarCard key={pillar.handle} pillar={pillar} />
+          <StaggerItem key={pillar.handle}>
+            <PillarCard pillar={pillar} />
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
     </section>
   )
 }

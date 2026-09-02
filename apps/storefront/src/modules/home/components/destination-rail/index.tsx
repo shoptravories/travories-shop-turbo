@@ -2,6 +2,7 @@ import { listDestinations } from "@lib/data/destinations"
 import CraftMotif from "@modules/common/components/craft-motif"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import SectionHeading from "@modules/common/components/section-heading"
+import { Stagger, StaggerItem } from "@modules/common/components/stagger"
 import Image from "next/image"
 
 /**
@@ -26,17 +27,19 @@ const DestinationRail = async () => {
         linkLabel="All destinations"
       />
 
-      <ul
+      <Stagger
+        as="ul"
         className="hide-scrollbar -mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 small:mx-0 small:grid small:grid-cols-3 small:gap-6 small:overflow-visible small:px-0"
       >
         {destinations.map((destination) => (
-          <li
+          <StaggerItem
+            as="li"
             key={destination.id}
             className="w-[74vw] shrink-0 snap-start xsmall:w-[46vw] small:w-auto"
           >
             <LocalizedClientLink
               href={`/destinations/${destination.slug}`}
-              className="group relative flex h-full min-h-[21rem] flex-col justify-end overflow-hidden rounded-large p-6 text-brand-surface ring-1 ring-inset ring-brand-ink/10 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:shadow-[0_28px_56px_-28px_hsl(var(--brand-ink)/0.55)] motion-reduce:transform-none"
+              className="group relative flex h-full min-h-[21rem] flex-col justify-end overflow-hidden rounded-card p-6 text-brand-surface ring-1 ring-inset ring-brand-ink/10 transition-all duration-500 ease-sleek hover:-translate-y-1.5 hover:shadow-[0_28px_56px_-28px_hsl(var(--brand-ink)/0.55)] motion-reduce:transform-none"
               data-testid={`destination-card-${destination.slug}`}
             >
               {destination.hero_image ? (
@@ -45,12 +48,12 @@ const DestinationRail = async () => {
                   alt={destination.name}
                   fill
                   sizes="(max-width: 1024px) 74vw, 33vw"
-                  className="absolute inset-0 object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                  className="absolute inset-0 object-cover transition-transform duration-[900ms] ease-sleek group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                 />
               ) : (
                 <CraftMotif
                   seed={destination.slug}
-                  className="transition-transform duration-700 ease-out group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                  className="transition-transform duration-[900ms] ease-sleek group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                 />
               )}
 
@@ -95,9 +98,9 @@ const DestinationRail = async () => {
                 </span>
               </div>
             </LocalizedClientLink>
-          </li>
+          </StaggerItem>
         ))}
-      </ul>
+      </Stagger>
     </section>
   )
 }

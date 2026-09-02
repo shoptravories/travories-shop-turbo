@@ -8,11 +8,9 @@ import PreviewPrice from "./price"
 
 export default async function ProductPreview({
   product,
-  isFeatured,
   region: _region,
 }: {
   product: HttpTypes.StoreProduct
-  isFeatured?: boolean
   region: HttpTypes.StoreRegion
 }) {
   const { cheapestPrice } = getProductPrice({ product })
@@ -25,7 +23,7 @@ export default async function ProductPreview({
       className="group block h-full"
     >
       <div
-        className="flex h-full flex-col overflow-hidden rounded-large border border-ui-border-base bg-white transition-all duration-300 ease-out hover:-translate-y-1 hover:border-brand-accent/40 hover:shadow-[0_18px_40px_-24px_hsl(var(--brand-primary-deep)/0.45)] motion-reduce:transform-none motion-reduce:transition-none"
+        className="flex h-full flex-col overflow-hidden rounded-card border border-ui-border-base bg-white transition-all duration-500 ease-sleek hover:-translate-y-1 hover:border-brand-accent/40 hover:shadow-[0_18px_40px_-24px_hsl(var(--brand-primary-deep)/0.45)] motion-reduce:transform-none motion-reduce:transition-none"
         data-testid="product-wrapper"
       >
         <div className="relative">
@@ -33,7 +31,6 @@ export default async function ProductPreview({
             thumbnail={product.thumbnail}
             images={product.images}
             size="full"
-            isFeatured={isFeatured}
             seed={product.handle ?? product.id}
             flat
           />

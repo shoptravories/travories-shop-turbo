@@ -2,6 +2,7 @@ import { listProducts } from "@lib/data/products"
 import { HttpTypes } from "@medusajs/types"
 
 import SectionHeading from "@modules/common/components/section-heading"
+import { Stagger, StaggerItem } from "@modules/common/components/stagger"
 import ProductPreview from "@modules/products/components/product-preview"
 
 const RAIL_LIMIT = 4
@@ -44,18 +45,20 @@ export default async function ProductRail({
         href={`/collections/${collection.handle}`}
       />
 
-      <ul
+      <Stagger
+        as="ul"
         className="hide-scrollbar -mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 small:mx-0 small:grid small:grid-cols-4 small:gap-6 small:overflow-visible small:px-0"
       >
         {products.map((product) => (
-          <li
+          <StaggerItem
+            as="li"
             key={product.id}
             className="w-[62vw] shrink-0 snap-start xsmall:w-[40vw] small:w-auto"
           >
-            <ProductPreview product={product} region={region} isFeatured />
-          </li>
+            <ProductPreview product={product} region={region} />
+          </StaggerItem>
         ))}
-      </ul>
+      </Stagger>
     </div>
   )
 }

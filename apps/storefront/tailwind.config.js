@@ -139,11 +139,19 @@ module.exports = {
         base: "4px",
         rounded: "8px",
         large: "16px",
+        // Cards on the landing page and product grid. Softer than `large`,
+        // which stays put for the 40-odd starter usages that expect 16px.
+        card: "20px",
         circle: "9999px",
         "5xl": "40px",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      // One easing curve shared by CSS transitions and the framer-motion
+      // variants, so a hover and a scroll reveal decelerate identically.
+      transitionTimingFunction: {
+        sleek: "cubic-bezier(0.22, 1, 0.36, 1)",
       },
       maxWidth: {
         "8xl": "100rem",

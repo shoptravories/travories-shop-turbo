@@ -1,3 +1,4 @@
+import { Stagger, StaggerItem } from "@modules/common/components/stagger"
 import { clx } from "@modules/common/components/ui"
 
 const PROMISES = [
@@ -40,9 +41,9 @@ const cellClass = (index: number) =>
 const AssuranceStrip = () => {
   return (
     <section className="border-b border-brand-line bg-brand-sand">
-      <div className="content-container grid grid-cols-1 xsmall:grid-cols-2 medium:grid-cols-4">
+      <Stagger className="content-container grid grid-cols-1 xsmall:grid-cols-2 medium:grid-cols-4">
         {PROMISES.map((promise, index) => (
-          <div key={promise.title} className={cellClass(index)}>
+          <StaggerItem key={promise.title} className={cellClass(index)}>
             <span className="text-tiny uppercase tracking-[0.18em] text-brand-accent">
               {String(index + 1).padStart(2, "0")}
             </span>
@@ -52,9 +53,9 @@ const AssuranceStrip = () => {
             <p className="text-small-regular leading-5 text-brand-slate/80">
               {promise.body}
             </p>
-          </div>
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
     </section>
   )
 }

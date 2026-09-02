@@ -9,14 +9,12 @@ const FilterSidebar = () => {
     useFilterParams()
 
   return (
-    <aside className="hidden w-[240px] shrink-0 small:block">
-      <div className="sticky top-32">
-        <OptionsPicker
-          selectedValueIds={selectedOptionValueIds}
-          setOptionValueIds={setOptionValueIds}
-          onClear={clearOptionValueIds}
-        />
-      </div>
+    <aside className="sticky top-32 hidden w-[240px] shrink-0 empty:hidden small:block small:empty:hidden">
+      <OptionsPicker
+        selectedValueIds={selectedOptionValueIds}
+        setOptionValueIds={setOptionValueIds}
+        onClear={clearOptionValueIds}
+      />
     </aside>
   )
 }

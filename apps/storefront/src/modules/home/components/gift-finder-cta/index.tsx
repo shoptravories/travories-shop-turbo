@@ -16,7 +16,7 @@ const SHORTCUTS = [
 const GiftFinderCta = () => {
   return (
     <section className="content-container section-y">
-      <div className="relative isolate grid grid-cols-1 items-center gap-10 overflow-hidden rounded-large bg-brand-surface-tint p-8 ring-1 ring-inset ring-brand-accent/15 small:grid-cols-[1fr_auto] small:gap-12 small:p-12">
+      <div className="relative isolate grid grid-cols-1 items-center gap-10 overflow-hidden rounded-card bg-brand-surface-tint p-8 ring-1 ring-inset ring-brand-accent/15 small:grid-cols-[1fr_auto] small:gap-12 small:p-12">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_120%_at_100%_0%,hsl(var(--brand-accent)/0.14),transparent_60%)]"

@@ -1,5 +1,6 @@
 import CraftMotif from "@modules/common/components/craft-motif"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { Stagger, StaggerItem } from "@modules/common/components/stagger"
 
 const STEPS = [
   {
@@ -37,23 +38,29 @@ const CraftStory = () => {
       <div aria-hidden className="grain pointer-events-none absolute inset-0" />
 
       <div className="content-container relative z-10 section-y">
-        <div className="max-w-2xl">
-          <span className="inline-flex items-center gap-x-2.5 text-xsmall-regular uppercase tracking-[0.2em] text-brand-accent-light">
-            <span aria-hidden className="h-px w-6 bg-brand-accent-light/60" />
-            How it works
-          </span>
-          <h2 className="mt-3 text-display text-[30px] small:text-[42px]">
-            Made by hand, not by machine
-          </h2>
-          <p className="mt-4 text-base-regular text-brand-surface/70 small:text-large-regular">
-            A souvenir is only worth carrying if someone actually made it. That
-            is the whole rule this shop runs on.
-          </p>
-        </div>
+        <Stagger className="max-w-2xl">
+          <StaggerItem>
+            <span className="inline-flex items-center gap-x-2.5 text-xsmall-regular uppercase tracking-[0.2em] text-brand-accent-light">
+              <span aria-hidden className="h-px w-6 bg-brand-accent-light/60" />
+              How it works
+            </span>
+          </StaggerItem>
+          <StaggerItem>
+            <h2 className="mt-3 text-display text-[30px] small:text-[42px]">
+              Made by hand, not by machine
+            </h2>
+          </StaggerItem>
+          <StaggerItem>
+            <p className="mt-4 text-base-regular text-brand-surface/70 small:text-large-regular">
+              A souvenir is only worth carrying if someone actually made it.
+              That is the whole rule this shop runs on.
+            </p>
+          </StaggerItem>
+        </Stagger>
 
-        <ol className="mt-14 grid grid-cols-1 gap-x-8 gap-y-10 small:grid-cols-3">
+        <Stagger as="ol" className="mt-14 grid grid-cols-1 gap-x-8 gap-y-10 small:grid-cols-3">
           {STEPS.map((item) => (
-            <li key={item.step} className="group relative pt-7">
+            <StaggerItem as="li" key={item.step} className="group relative pt-7">
               {/* The rule doubles as the step's progress mark: a bright
                   accent segment over the full-width hairline. */}
               <span
@@ -71,9 +78,9 @@ const CraftStory = () => {
               <p className="mt-2 text-base-regular text-brand-surface/65">
                 {item.body}
               </p>
-            </li>
+            </StaggerItem>
           ))}
-        </ol>
+        </Stagger>
 
         <LocalizedClientLink
           href="/store"

@@ -46,14 +46,10 @@ export default async function Home(props: {
 
       <AssuranceStrip />
 
-      <Reveal>
-        <DestinationRail />
-      </Reveal>
+      <DestinationRail />
 
       <div className="border-y border-brand-line bg-brand-sand">
-        <Reveal>
-          <PillarSplit pillars={pillars} />
-        </Reveal>
+        <PillarSplit pillars={pillars} />
       </div>
 
       {collections?.length ? (
@@ -62,9 +58,7 @@ export default async function Home(props: {
         </div>
       ) : null}
 
-      <Reveal>
-        <CraftStory />
-      </Reveal>
+      <CraftStory />
 
       <Reveal>
         <GiftFinderCta />
