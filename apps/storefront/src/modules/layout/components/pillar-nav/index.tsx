@@ -26,6 +26,8 @@ export type PillarGroup = {
 export type Pillar = {
   name: string
   handle: string
+  eyebrow?: string
+  motif?: "peaks" | "mandala"
   blurb: string
   /** Where the footer link goes. Defaults to the pillar's own category. */
   blurbHref?: string

@@ -339,9 +339,37 @@ export default async function initial_data_seed({
   ).run({
     input: {
       product_categories: [
-        { name: "Souvenirs", is_active: true },
-        { name: "Gifts", is_active: true },
-        { name: "Gear", is_active: true },
+        {
+          name: "Souvenirs",
+          is_active: true,
+          metadata: {
+            pillar_order: 0,
+            pillar_eyebrow: "For travellers",
+            pillar_motif: "peaks",
+            pillar_blurb: "Browse every destination",
+            pillar_blurb_href: "/destinations",
+          },
+        },
+        {
+          name: "Gifts",
+          is_active: true,
+          metadata: {
+            pillar_order: 1,
+            pillar_eyebrow: "For gift shoppers",
+            pillar_motif: "mandala",
+            pillar_blurb: "See all gifts",
+          },
+        },
+        {
+          name: "Gear",
+          is_active: true,
+          metadata: {
+            pillar_order: 2,
+            pillar_eyebrow: "For the trail",
+            pillar_motif: "peaks",
+            pillar_blurb: "See all gear",
+          },
+        },
       ],
     },
   })

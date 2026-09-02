@@ -5,10 +5,10 @@ import { BUDGET_BANDS, budgetBand, findGifts } from "@lib/data/gift-finder"
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { buildPillars } from "@lib/util/pillars"
-import { HttpTypes } from "@medusajs/types"
+import { HttpTypes } from "@medusajs/framework/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import SurpriseProductPicker from "@modules/common/components/surprise-product-picker"
 import ProductPreview from "@modules/products/components/product-preview"
-import GiftFinderRandomizer from "./gift-finder-randomizer"
 
 export const metadata: Metadata = {
   title: "Gift finder | Nepal Souvenirs",
@@ -241,11 +241,13 @@ export default async function GiftFinderPage(props: Props) {
 
         <div className="mt-12 small:mt-0" data-testid="finder-results">
           {!hasChoice ? (
-            <GiftFinderRandomizer
+            <SurpriseProductPicker
               products={giftCatalogue}
               compact
               title="Open the gift box if you want one instant idea"
               description="For indecisive shoppers: tap the box, let it do the arcade-style shuffle, and it will unlock one real gift from the catalogue."
+              boxLabel="Gift drop"
+              retryLabel="Pick another"
             />
           ) : (
             <>
@@ -263,7 +265,13 @@ export default async function GiftFinderPage(props: Props) {
 
               {products.length && region ? (
                 <>
-                  <GiftFinderRandomizer products={products} />
+                  <SurpriseProductPicker
+                    products={products}
+                    title={`Let the gift box pick from ${products.length} matches`}
+                    description="Open the box when you want one instant suggestion before browsing the full grid."
+                    boxLabel="Gift drop"
+                    retryLabel="Pick another"
+                  />
 
                   <div className="mb-6 flex items-baseline justify-between gap-4">
                     <h3 className="font-playfair text-[22px] text-brand-heading">

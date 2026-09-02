@@ -4,6 +4,8 @@ import type { Pillar, PillarGroup } from "@modules/layout/components/pillar-nav"
 type Cat = HttpTypes.StoreProductCategory
 type PillarOverride = {
   order: number
+  eyebrow?: string
+  motif?: "peaks" | "mandala"
   blurb?: string
   blurbHref?: string
 }
@@ -11,15 +13,57 @@ type PillarOverride = {
 const PILLAR_OVERRIDES: Record<string, PillarOverride> = {
   souvenirs: {
     order: 0,
+    eyebrow: "For travellers",
+    motif: "peaks",
     blurb: "Browse every destination",
     blurbHref: "/destinations",
   },
-  gifts: { order: 1, blurb: "See all gifts" },
-  gear: { order: 2, blurb: "See all gear" },
+  gifts: {
+    order: 1,
+    eyebrow: "For gift shoppers",
+    motif: "mandala",
+    blurb: "See all gifts",
+  },
+  gear: {
+    order: 2,
+    eyebrow: "For the trail",
+    motif: "peaks",
+    blurb: "See all gear",
+  },
 }
+
+type Metadata = Record<string, unknown> | null | undefined
 
 const parentIdOf = (c: Cat): string | null =>
   c.parent_category?.id ?? (c as { parent_category_id?: string | null }).parent_category_id ?? null
+
+const metadataOf = (category: Cat): Metadata =>
+  (category as { metadata?: Metadata }).metadata
+
+const stringMeta = (category: Cat, key: string) => {
+  const value = metadataOf(category)?.[key]
+  return typeof value === "string" && value.trim() ? value.trim() : undefined
+}
+
+const numberMeta = (category: Cat, key: string) => {
+  const value = metadataOf(category)?.[key]
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : undefined
+  }
+
+  return undefined
+}
+
+const motifMeta = (category: Cat) => {
+  const value = stringMeta(category, "pillar_motif")
+  return value === "mandala" || value === "peaks" ? value : undefined
+}
 
 /**
  * Builds the pillar menu structure from top-level product categories. Any root
@@ -38,8 +82,10 @@ export const buildPillars = (categories: Cat[]): Pillar[] => {
 
   const toLink = (c: Cat) => ({ id: c.id, name: c.name, handle: c.handle })
   const rootCategories = (childrenOf.get(null) ?? []).sort((a, b) => {
-    const aOrder = PILLAR_OVERRIDES[a.handle]?.order ?? 100
-    const bOrder = PILLAR_OVERRIDES[b.handle]?.order ?? 100
+    const aOrder =
+      numberMeta(a, "pillar_order") ?? PILLAR_OVERRIDES[a.handle]?.order ?? 100
+    const bOrder =
+      numberMeta(b, "pillar_order") ?? PILLAR_OVERRIDES[b.handle]?.order ?? 100
 
     if (aOrder !== bOrder) {
       return aOrder - bOrder
@@ -65,8 +111,15 @@ export const buildPillars = (categories: Cat[]): Pillar[] => {
     return {
       name: pillar.name,
       handle: pillar.handle,
-      blurb: override?.blurb ?? `See all ${pillar.name.toLowerCase()}`,
-      blurbHref: override?.blurbHref,
+      eyebrow:
+        stringMeta(pillar, "pillar_eyebrow") ?? override?.eyebrow ?? undefined,
+      motif: motifMeta(pillar) ?? override?.motif ?? undefined,
+      blurb:
+        stringMeta(pillar, "pillar_blurb") ??
+        override?.blurb ??
+        `See all ${pillar.name.toLowerCase()}`,
+      blurbHref:
+        stringMeta(pillar, "pillar_blurb_href") ?? override?.blurbHref,
       groups,
     }
   })

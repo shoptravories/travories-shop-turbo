@@ -4,38 +4,30 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import SectionHeading from "@modules/common/components/section-heading"
 import { Stagger, StaggerItem } from "@modules/common/components/stagger"
 
-const COPY: Partial<
-  Record<string, { eyebrow: string; blurb: string; motif: "peaks" | "mandala" }>
-> = {
+const COPY: Partial<Record<string, { blurb: string }>> = {
   souvenirs: {
-    eyebrow: "For travellers",
     blurb:
       "You have been there. Take back something made where you stood, not in a factory somewhere else.",
-    motif: "peaks",
   },
   gifts: {
-    eyebrow: "For gift shoppers",
     blurb:
       "Never been to Nepal, but giving something from it. Chosen by occasion, recipient and budget.",
-    motif: "mandala",
   },
   gear: {
-    eyebrow: "For the trail",
     blurb:
       "Trekking and mountaineering gear for the approach, the camp and the climb.",
-    motif: "peaks",
   },
 }
 
-const getPillarCopy = (pillar: Pillar) =>
-  COPY[pillar.handle] ?? {
-    eyebrow: "New collection",
-    blurb:
-      pillar.groups.length > 1
-        ? `Browse ${pillar.name.toLowerCase()} by group, then drill into the specific category you want.`
-        : `Browse the latest ${pillar.name.toLowerCase()} additions from the same catalogue.`,
-    motif: pillar.handle === "gifts" ? "mandala" : "peaks",
-  }
+const getPillarCopy = (pillar: Pillar) => ({
+  eyebrow: pillar.eyebrow ?? "New collection",
+  motif: pillar.motif ?? (pillar.handle === "gifts" ? "mandala" : "peaks"),
+  blurb:
+    COPY[pillar.handle]?.blurb ??
+    (pillar.groups.length > 1
+      ? `Browse ${pillar.name.toLowerCase()} by group, then drill into the specific category you want.`
+      : `Browse the latest ${pillar.name.toLowerCase()} additions from the same catalogue.`),
+})
 
 const PillarCard = ({ pillar }: { pillar: Pillar }) => {
   const copy = getPillarCopy(pillar)
