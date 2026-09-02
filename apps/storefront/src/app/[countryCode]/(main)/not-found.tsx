@@ -1,11 +1,12 @@
+import { buildPrivateMetadata } from "@lib/seo"
 import { Metadata } from "next"
 
 import InteractiveLink from "@modules/common/components/interactive-link"
 
-export const metadata: Metadata = {
-  title: "404",
-  description: "Something went wrong",
-}
+export const metadata: Metadata = buildPrivateMetadata({
+  title: "Page not found",
+  description: "The page you tried to access does not exist.",
+})
 
 export default function NotFound() {
   return (

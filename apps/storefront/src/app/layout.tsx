@@ -1,4 +1,9 @@
-import { buildSiteMetadata } from "@lib/seo"
+import {
+  JsonLd,
+  buildSiteMetadata,
+  organizationSchema,
+  websiteSchema,
+} from "@lib/seo"
 import { Metadata } from "next"
 import { Playfair_Display, Poppins } from "next/font/google"
 import "styles/globals.css"
@@ -30,6 +35,9 @@ export default function RootLayout(props: { children: React.ReactNode }) {
       className={`${poppins.variable} ${playfair.variable}`}
     >
       <body>
+        {/* Site-wide graph. Page-level schema (Product, CollectionPage,
+            BreadcrumbList) is emitted by the route that owns it. */}
+        <JsonLd data={[organizationSchema(), websiteSchema()]} id="site" />
         <main className="relative">{props.children}</main>
       </body>
     </html>

@@ -3,12 +3,14 @@ import { retrieveCustomer } from "@lib/data/customer"
 import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
+import { buildPrivateMetadata } from "@lib/seo"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPrivateMetadata({
   title: "Checkout",
-}
+  description: "Complete your Nepal Souvenirs order.",
+})
 
 export default async function Checkout() {
   const cart = await retrieveCart()

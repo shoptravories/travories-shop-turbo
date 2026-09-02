@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 
 import { listDestinations } from "@lib/data/destinations"
-import { buildSeoMetadata } from "@lib/seo"
+import { JsonLd, breadcrumbSchema, buildSeoMetadata, collectionPageSchema } from "@lib/seo"
 import CraftMotif from "@modules/common/components/craft-motif"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Reveal from "@modules/common/components/reveal"
@@ -13,20 +13,44 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const { countryCode } = await props.params
 
-  return buildSeoMetadata({
+  return await buildSeoMetadata({
     title: "Shop by Destination",
     description:
       "Browse hand-made Nepali souvenirs by the place they came from, including Kathmandu Valley, Pokhara, the Everest region, Chitwan, Lumbini, and Ilam.",
     countryCode,
     path: "/destinations",
+    eyebrow: "Shop by place",
   })
 }
 
-export default async function DestinationsPage() {
+export default async function DestinationsPage(props: {
+  params: Promise<{ countryCode: string }>
+}) {
+  const { countryCode } = await props.params
   const destinations = await listDestinations()
 
   return (
     <>
+      <JsonLd
+        id="destinations"
+        data={[
+          collectionPageSchema({
+            name: "Destinations",
+            description:
+              "Hand-made Nepali souvenirs grouped by the place they came from.",
+            path: "/destinations",
+            countryCode,
+          }),
+          breadcrumbSchema(
+            [
+              { name: "Home", path: "/" },
+              { name: "Destinations", path: "/destinations" },
+            ],
+            countryCode
+          ),
+        ]}
+      />
+
       <BrowseHeader
         eyebrow="Shop by place"
         title="Destinations"

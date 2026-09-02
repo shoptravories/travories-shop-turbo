@@ -4,8 +4,17 @@ import { notFound } from "next/navigation"
 import { getDestinationBySlug } from "@lib/data/destinations"
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
-import { buildSeoMetadata } from "@lib/seo"
+import {
+  JsonLd,
+  absoluteImageUrl,
+  breadcrumbSchema,
+  buildSeoMetadata,
+  destinationSchema,
+  itemListSchema,
+  localizedUrl,
+} from "@lib/seo"
 import ProductPreview from "@modules/products/components/product-preview"
+import ShareButtons from "@modules/common/components/share-buttons"
 import Reveal from "@modules/common/components/reveal"
 import SectionHeading from "@modules/common/components/section-heading"
 import BrowseHeader from "@modules/store/components/browse-header"
@@ -19,7 +28,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const destination = await getDestinationBySlug(slug)
 
   if (!destination) {
-    return buildSeoMetadata({
+    return await buildSeoMetadata({
       title: "Destination not found",
       countryCode,
       path: `/destinations/${slug}`,
@@ -27,7 +36,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     })
   }
 
-  return buildSeoMetadata({
+  return await buildSeoMetadata({
     title: destination.name,
     description:
       destination.tagline ??
@@ -35,6 +44,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     countryCode,
     path: `/destinations/${slug}`,
     image: destination.hero_image ?? null,
+    eyebrow: destination.region ?? "Shop by place",
     keywords: [
       `${destination.name} souvenirs`,
       `${destination.name} Nepal gifts`,
@@ -67,8 +77,38 @@ export default async function DestinationPage(props: Props) {
 
   const artisans = destination.artisans ?? []
 
+  const path = `/destinations/${slug}`
+
   return (
     <>
+      <JsonLd
+        id="destination"
+        data={[
+          destinationSchema({
+            name: destination.name,
+            description: destination.tagline ?? destination.story,
+            path,
+            countryCode,
+            image: destination.hero_image,
+            latitude: destination.latitude,
+            longitude: destination.longitude,
+          }),
+          itemListSchema({
+            products,
+            countryCode,
+            name: `Souvenirs from ${destination.name}`,
+          }),
+          breadcrumbSchema(
+            [
+              { name: "Home", path: "/" },
+              { name: "Destinations", path: "/destinations" },
+              { name: destination.name, path },
+            ],
+            countryCode
+          ),
+        ]}
+      />
+
       <BrowseHeader
         eyebrow={destination.region ?? undefined}
         title={destination.name}
@@ -102,6 +142,16 @@ export default async function DestinationPage(props: Props) {
         </section>
         </Reveal>
       )}
+
+      <section className="content-container pb-8">
+        <ShareButtons
+          url={localizedUrl(countryCode, path)}
+          title={`${destination.name} souvenirs`}
+          description={destination.tagline ?? undefined}
+          image={absoluteImageUrl(destination.hero_image)}
+          label="Share this place"
+        />
+      </section>
 
       <Reveal delay={60}>
       <section className="content-container pb-16">

@@ -10,6 +10,9 @@ import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-relat
 import { notFound } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
 
+import { absoluteImageUrl, localizedUrl } from "@lib/seo"
+import ShareButtons from "@modules/common/components/share-buttons"
+
 import ProductActionsWrapper from "./product-actions-wrapper"
 
 type ProductTemplateProps = {
@@ -38,6 +41,13 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full py-8 gap-y-6">
           <ProductInfo product={product} />
           <ProductTabs product={product} />
+          <ShareButtons
+            url={localizedUrl(countryCode, `/products/${product.handle}`)}
+            title={product.title}
+            description={product.subtitle ?? product.description ?? undefined}
+            image={absoluteImageUrl(product.thumbnail)}
+            label="Share this"
+          />
         </div>
         <div className="block w-full relative">
           <ImageGallery images={images} />

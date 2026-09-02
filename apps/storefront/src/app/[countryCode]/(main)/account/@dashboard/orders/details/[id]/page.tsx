@@ -1,5 +1,6 @@
 import { retrieveOrder } from "@lib/data/orders"
 import OrderDetailsTemplate from "@modules/order/templates/order-details-template"
+import { buildPrivateMetadata } from "@lib/seo"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
@@ -15,10 +16,10 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
-  return {
+  return buildPrivateMetadata({
     title: `Order #${order.display_id}`,
-    description: `View your order`,
-  }
+    description: "View your order.",
+  })
 }
 
 export default async function OrderDetailPage(props: Props) {

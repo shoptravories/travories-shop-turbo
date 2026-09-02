@@ -1,11 +1,12 @@
+import { buildPrivateMetadata } from "@lib/seo"
 import { Metadata } from "next"
 
 import InteractiveLink from "@modules/common/components/interactive-link"
 
-export const metadata: Metadata = {
-  title: "404",
-  description: "Something went wrong",
-}
+export const metadata: Metadata = buildPrivateMetadata({
+  title: "Cart not found",
+  description: "The cart you tried to access does not exist.",
+})
 
 export default function NotFound() {
   return (

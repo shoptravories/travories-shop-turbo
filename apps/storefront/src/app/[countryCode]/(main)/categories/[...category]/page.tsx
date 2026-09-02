@@ -3,7 +3,12 @@ import { notFound } from "next/navigation"
 
 import { getCategoryByHandle, listCategories } from "@lib/data/categories"
 import { listRegions } from "@lib/data/regions"
-import { buildSeoMetadata } from "@lib/seo"
+import {
+  JsonLd,
+  breadcrumbSchema,
+  buildSeoMetadata,
+  collectionPageSchema,
+} from "@lib/seo"
 import { HttpTypes, StoreRegion } from "@medusajs/types"
 import CategoryTemplate from "@modules/categories/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
@@ -52,13 +57,14 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   try {
     const productCategory = await getCategoryByHandle(params.category)
 
-    return buildSeoMetadata({
+    return await buildSeoMetadata({
       title: productCategory.name,
       description:
         productCategory.description ??
         `Browse ${productCategory.name.toLowerCase()} from Nepal Souvenirs.`,
       countryCode: params.countryCode,
       path: `/categories/${params.category.join("/")}`,
+      eyebrow: "Shop the range",
       keywords: [
         `${productCategory.name} Nepal`,
         `${productCategory.name} souvenirs`,
@@ -82,13 +88,43 @@ export default async function CategoryPage(props: Props) {
     notFound()
   }
 
+  const path = `/categories/${params.category.join("/")}`
+
+  // Ancestors come from the handle segments, so a nested category reports the
+  // same trail the visitor actually clicked through.
+  const crumbs = [
+    { name: "Home", path: "/" },
+    { name: "Shop", path: "/store" },
+    ...params.category.map((segment, index) => ({
+      name:
+        index === params.category.length - 1
+          ? productCategory.name
+          : segment.replace(/-/g, " "),
+      path: `/categories/${params.category.slice(0, index + 1).join("/")}`,
+    })),
+  ]
+
   return (
-    <CategoryTemplate
-      category={productCategory}
-      sortBy={sortBy}
-      page={page}
-      countryCode={params.countryCode}
-      optionValueIds={optionValueIds}
-    />
+    <>
+      <JsonLd
+        id="category"
+        data={[
+          collectionPageSchema({
+            name: productCategory.name,
+            description: productCategory.description,
+            path,
+            countryCode: params.countryCode,
+          }),
+          breadcrumbSchema(crumbs, params.countryCode),
+        ]}
+      />
+      <CategoryTemplate
+        category={productCategory}
+        sortBy={sortBy}
+        page={page}
+        countryCode={params.countryCode}
+        optionValueIds={optionValueIds}
+      />
+    </>
   )
 }

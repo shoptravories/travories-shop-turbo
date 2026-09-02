@@ -20,7 +20,7 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const { countryCode } = await props.params
 
-  return buildSeoMetadata({
+  return await buildSeoMetadata({
     title: "Souvenirs, Gifts, and Trail Gear from Nepal",
     description:
       "Hand-made souvenirs, gifts, and trail gear from Nepal, sourced from local artisans and shipped from Kathmandu. Shop by destination, gift occasion, or trail use.",

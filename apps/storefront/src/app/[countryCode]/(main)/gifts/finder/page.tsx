@@ -14,7 +14,7 @@ import ProductPreview from "@modules/products/components/product-preview"
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { countryCode } = await props.params
 
-  return buildSeoMetadata({
+  return await buildSeoMetadata({
     title: "Gift Finder",
     description:
       "Find a Nepali gift by recipient, occasion, or budget, or open the surprise gift box for an instant recommendation.",

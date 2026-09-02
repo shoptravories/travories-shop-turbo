@@ -1,6 +1,14 @@
 import { Heading, Text } from "@modules/common/components/ui"
 import TransferActions from "@modules/order/components/transfer-actions"
 import TransferImage from "@modules/order/components/transfer-image"
+import { buildPrivateMetadata } from "@lib/seo"
+import { Metadata } from "next"
+
+// The URL carries a transfer token, so this must never be indexed.
+export const metadata: Metadata = buildPrivateMetadata({
+  title: "Order transfer request",
+  description: "Review a request to transfer this order.",
+})
 
 export default async function TransferPage({
   params,

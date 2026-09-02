@@ -3,7 +3,12 @@ import { notFound } from "next/navigation"
 
 import { getCollectionByHandle, listCollections } from "@lib/data/collections"
 import { listRegions } from "@lib/data/regions"
-import { buildSeoMetadata } from "@lib/seo"
+import {
+  JsonLd,
+  breadcrumbSchema,
+  buildSeoMetadata,
+  collectionPageSchema,
+} from "@lib/seo"
 import { StoreCollection, StoreRegion } from "@medusajs/types"
 import CollectionTemplate from "@modules/collections/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
@@ -63,13 +68,14 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
-  return buildSeoMetadata({
+  return await buildSeoMetadata({
     title: collection.title,
     description:
       collection.metadata?.description?.toString() ??
       `Browse the ${collection.title} collection from Nepal Souvenirs.`,
     countryCode: params.countryCode,
     path: `/collections/${params.handle}`,
+    eyebrow: "Collection",
     keywords: [
       `${collection.title} Nepal`,
       `${collection.title} collection`,
@@ -92,13 +98,36 @@ export default async function CollectionPage(props: Props) {
     notFound()
   }
 
+  const path = `/collections/${params.handle}`
+
   return (
-    <CollectionTemplate
-      collection={collection}
-      page={page}
-      sortBy={sortBy}
-      countryCode={params.countryCode}
-      optionValueIds={optionValueIds}
-    />
+    <>
+      <JsonLd
+        id="collection"
+        data={[
+          collectionPageSchema({
+            name: collection.title,
+            description: collection.metadata?.description?.toString(),
+            path,
+            countryCode: params.countryCode,
+          }),
+          breadcrumbSchema(
+            [
+              { name: "Home", path: "/" },
+              { name: "Shop", path: "/store" },
+              { name: collection.title, path },
+            ],
+            params.countryCode
+          ),
+        ]}
+      />
+      <CollectionTemplate
+        collection={collection}
+        page={page}
+        sortBy={sortBy}
+        countryCode={params.countryCode}
+        optionValueIds={optionValueIds}
+      />
+    </>
   )
 }

@@ -1,3 +1,4 @@
+import { buildPrivateMetadata } from "@lib/seo"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
@@ -6,10 +7,10 @@ import AddressBook from "@modules/account/components/address-book"
 import { getRegion } from "@lib/data/regions"
 import { retrieveCustomer } from "@lib/data/customer"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPrivateMetadata({
   title: "Addresses",
-  description: "View your addresses",
-}
+  description: "View and edit your saved shipping addresses.",
+})
 
 export default async function Addresses(props: {
   params: Promise<{ countryCode: string }>

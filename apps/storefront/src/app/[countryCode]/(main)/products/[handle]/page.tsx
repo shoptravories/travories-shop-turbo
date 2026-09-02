@@ -2,7 +2,13 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { listProducts } from "@lib/data/products"
 import { getRegion, listRegions } from "@lib/data/regions"
-import { buildSeoMetadata } from "@lib/seo"
+import {
+  JsonLd,
+  ProductOpenGraph,
+  breadcrumbSchema,
+  buildSeoMetadata,
+  productSchema,
+} from "@lib/seo"
 import ProductTemplate from "@modules/products/templates"
 import { HttpTypes } from "@medusajs/framework/types"
 
@@ -88,14 +94,16 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
-  return buildSeoMetadata({
+  return await buildSeoMetadata({
     title: product.title,
     description:
       product.description?.replace(/\s+/g, " ").trim() ??
       `Shop ${product.title} from Nepal Souvenirs.`,
     countryCode: params.countryCode,
     path: `/products/${handle}`,
+    type: "product",
     image: product.thumbnail ?? null,
+    eyebrow: product.collection?.title ?? product.categories?.[0]?.name ?? undefined,
     keywords: [
       product.title,
       `${product.title} Nepal`,
@@ -126,12 +134,42 @@ export default async function ProductPage(props: Props) {
 
   const images = getImagesForVariant(pricedProduct, selectedVariantId)
 
+  const crumbs = [
+    { name: "Home", path: "/" },
+    { name: "Shop", path: "/store" },
+    ...(pricedProduct.collection
+      ? [
+          {
+            name: pricedProduct.collection.title,
+            path: `/collections/${pricedProduct.collection.handle}`,
+          },
+        ]
+      : []),
+    { name: pricedProduct.title },
+  ]
+
   return (
-    <ProductTemplate
-      product={pricedProduct}
-      region={region}
-      countryCode={params.countryCode}
-      images={images ?? []}
-    />
+    <>
+      {/* Product rich results need price, currency and availability, which is
+          why this is emitted from the page rather than the template - the page
+          is where the region-priced product actually lives. */}
+      <ProductOpenGraph product={pricedProduct} />
+      <JsonLd
+        id="product"
+        data={[
+          productSchema({
+            product: pricedProduct,
+            countryCode: params.countryCode,
+          }),
+          breadcrumbSchema(crumbs, params.countryCode),
+        ]}
+      />
+      <ProductTemplate
+        product={pricedProduct}
+        region={region}
+        countryCode={params.countryCode}
+        images={images ?? []}
+      />
+    </>
   )
 }
