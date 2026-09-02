@@ -1,12 +1,22 @@
 import { Metadata } from "next"
 
+import { buildSeoMetadata } from "@lib/seo"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import StoreTemplate from "@modules/store/templates"
 
-export const metadata: Metadata = {
-  title: "Store",
-  description: "Explore all of our products.",
+export async function generateMetadata(props: {
+  params: Promise<{ countryCode: string }>
+}): Promise<Metadata> {
+  const { countryCode } = await props.params
+
+  return buildSeoMetadata({
+    title: "All Products",
+    description:
+      "Explore the full Nepal Souvenirs catalogue, including handmade gifts, destination-led pieces, and trekking or mountaineering gear.",
+    countryCode,
+    path: "/store",
+  })
 }
 
 type StorePageSearchParams = Record<string, string | string[] | undefined> & {

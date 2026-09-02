@@ -1,16 +1,25 @@
 import { Metadata } from "next"
 
 import { listDestinations } from "@lib/data/destinations"
+import { buildSeoMetadata } from "@lib/seo"
 import CraftMotif from "@modules/common/components/craft-motif"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Reveal from "@modules/common/components/reveal"
 import BrowseHeader from "@modules/store/components/browse-header"
 import Image from "next/image"
 
-export const metadata: Metadata = {
-  title: "Destinations | Nepal Souvenirs",
-  description:
-    "Browse hand-made Nepali souvenirs by the place they came from - Kathmandu Valley, Pokhara, the Everest region, Chitwan, Lumbini and Ilam.",
+export async function generateMetadata(props: {
+  params: Promise<{ countryCode: string }>
+}): Promise<Metadata> {
+  const { countryCode } = await props.params
+
+  return buildSeoMetadata({
+    title: "Shop by Destination",
+    description:
+      "Browse hand-made Nepali souvenirs by the place they came from, including Kathmandu Valley, Pokhara, the Everest region, Chitwan, Lumbini, and Ilam.",
+    countryCode,
+    path: "/destinations",
+  })
 }
 
 export default async function DestinationsPage() {

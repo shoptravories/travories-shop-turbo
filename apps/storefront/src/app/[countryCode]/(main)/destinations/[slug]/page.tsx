@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { getDestinationBySlug } from "@lib/data/destinations"
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
+import { buildSeoMetadata } from "@lib/seo"
 import ProductPreview from "@modules/products/components/product-preview"
 import Reveal from "@modules/common/components/reveal"
 import SectionHeading from "@modules/common/components/section-heading"
@@ -14,19 +15,32 @@ type Props = {
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
-  const { slug } = await props.params
+  const { countryCode, slug } = await props.params
   const destination = await getDestinationBySlug(slug)
 
   if (!destination) {
-    return { title: "Destination not found" }
+    return buildSeoMetadata({
+      title: "Destination not found",
+      countryCode,
+      path: `/destinations/${slug}`,
+      noIndex: true,
+    })
   }
 
-  return {
-    title: `${destination.name} | Nepal Souvenirs`,
+  return buildSeoMetadata({
+    title: destination.name,
     description:
       destination.tagline ??
       `Hand-made souvenirs from ${destination.name}, Nepal.`,
-  }
+    countryCode,
+    path: `/destinations/${slug}`,
+    image: destination.hero_image ?? null,
+    keywords: [
+      `${destination.name} souvenirs`,
+      `${destination.name} Nepal gifts`,
+      `shop ${destination.name}`,
+    ],
+  })
 }
 
 export default async function DestinationPage(props: Props) {

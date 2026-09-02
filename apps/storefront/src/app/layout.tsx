@@ -1,4 +1,4 @@
-import { getBaseURL } from "@lib/util/env"
+import { buildSiteMetadata } from "@lib/seo"
 import { Metadata } from "next"
 import { Playfair_Display, Poppins } from "next/font/google"
 import "styles/globals.css"
@@ -20,9 +20,7 @@ const playfair = Playfair_Display({
   display: "swap",
 })
 
-export const metadata: Metadata = {
-  metadataBase: new URL(getBaseURL()),
-}
+export const metadata: Metadata = buildSiteMetadata()
 
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (

@@ -3,6 +3,7 @@ import { Metadata } from "next"
 import { listCategories } from "@lib/data/categories"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
+import { buildSeoMetadata } from "@lib/seo"
 import { buildPillars } from "@lib/util/pillars"
 import Reveal from "@modules/common/components/reveal"
 import AssuranceStrip from "@modules/home/components/assurance-strip"
@@ -14,10 +15,17 @@ import Hero from "@modules/home/components/hero"
 import PillarSplit from "@modules/home/components/pillar-split"
 import TravoriesBand from "@modules/home/components/travories-band"
 
-export const metadata: Metadata = {
-  title: "Nepal Souvenirs and Gifts | by Travories",
-  description:
-    "Hand-made souvenirs and gifts from Nepal, sourced from local artisans and shipped from Kathmandu. Shop by destination or find a gift by occasion.",
+export async function generateMetadata(props: {
+  params: Promise<{ countryCode: string }>
+}): Promise<Metadata> {
+  const { countryCode } = await props.params
+
+  return buildSeoMetadata({
+    title: "Souvenirs, Gifts, and Trail Gear from Nepal",
+    description:
+      "Hand-made souvenirs, gifts, and trail gear from Nepal, sourced from local artisans and shipped from Kathmandu. Shop by destination, gift occasion, or trail use.",
+    countryCode,
+  })
 }
 
 export default async function Home(props: {

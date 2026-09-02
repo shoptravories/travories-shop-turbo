@@ -2,8 +2,9 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { listProducts } from "@lib/data/products"
 import { getRegion, listRegions } from "@lib/data/regions"
+import { buildSeoMetadata } from "@lib/seo"
 import ProductTemplate from "@modules/products/templates"
-import { HttpTypes } from "@medusajs/types"
+import { HttpTypes } from "@medusajs/framework/types"
 
 type Props = {
   params: Promise<{ countryCode: string; handle: string }>
@@ -87,15 +88,20 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
-  return {
-    title: `${product.title} | Medusa Store`,
-    description: `${product.title}`,
-    openGraph: {
-      title: `${product.title} | Medusa Store`,
-      description: `${product.title}`,
-      images: product.thumbnail ? [product.thumbnail] : [],
-    },
-  }
+  return buildSeoMetadata({
+    title: product.title,
+    description:
+      product.description?.replace(/\s+/g, " ").trim() ??
+      `Shop ${product.title} from Nepal Souvenirs.`,
+    countryCode: params.countryCode,
+    path: `/products/${handle}`,
+    image: product.thumbnail ?? null,
+    keywords: [
+      product.title,
+      `${product.title} Nepal`,
+      product.collection?.title ?? "Nepal handmade products",
+    ],
+  })
 }
 
 export default async function ProductPage(props: Props) {

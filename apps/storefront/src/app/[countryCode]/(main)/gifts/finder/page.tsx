@@ -4,16 +4,29 @@ import { listCategories } from "@lib/data/categories"
 import { BUDGET_BANDS, budgetBand, findGifts } from "@lib/data/gift-finder"
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
+import { buildSeoMetadata } from "@lib/seo"
 import { buildPillars } from "@lib/util/pillars"
 import { HttpTypes } from "@medusajs/framework/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import SurpriseProductPicker from "@modules/common/components/surprise-product-picker"
 import ProductPreview from "@modules/products/components/product-preview"
 
-export const metadata: Metadata = {
-  title: "Gift finder | Nepal Souvenirs",
-  description:
-    "Find a Nepali gift by who it is for, the occasion, and your budget.",
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const { countryCode } = await props.params
+
+  return buildSeoMetadata({
+    title: "Gift Finder",
+    description:
+      "Find a Nepali gift by recipient, occasion, or budget, or open the surprise gift box for an instant recommendation.",
+    countryCode,
+    path: "/gifts/finder",
+    keywords: [
+      "gift finder Nepal",
+      "Nepali gift ideas",
+      "gift box recommendation",
+      "handmade Nepal gifts",
+    ],
+  })
 }
 
 type SearchParams = {

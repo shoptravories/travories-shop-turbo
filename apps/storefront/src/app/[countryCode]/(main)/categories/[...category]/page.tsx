@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 
 import { getCategoryByHandle, listCategories } from "@lib/data/categories"
 import { listRegions } from "@lib/data/regions"
+import { buildSeoMetadata } from "@lib/seo"
 import { HttpTypes, StoreRegion } from "@medusajs/types"
 import CategoryTemplate from "@modules/categories/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
@@ -51,17 +52,19 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   try {
     const productCategory = await getCategoryByHandle(params.category)
 
-    const title = productCategory.name + " | Medusa Store"
-
-    const description = productCategory.description ?? `${title} category.`
-
-    return {
-      title: `${title} | Medusa Store`,
-      description,
-      alternates: {
-        canonical: `${params.category.join("/")}`,
-      },
-    }
+    return buildSeoMetadata({
+      title: productCategory.name,
+      description:
+        productCategory.description ??
+        `Browse ${productCategory.name.toLowerCase()} from Nepal Souvenirs.`,
+      countryCode: params.countryCode,
+      path: `/categories/${params.category.join("/")}`,
+      keywords: [
+        `${productCategory.name} Nepal`,
+        `${productCategory.name} souvenirs`,
+        `${productCategory.name} gifts`,
+      ],
+    })
   } catch {
     notFound()
   }

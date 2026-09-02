@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 
 import { getCollectionByHandle, listCollections } from "@lib/data/collections"
 import { listRegions } from "@lib/data/regions"
+import { buildSeoMetadata } from "@lib/seo"
 import { StoreCollection, StoreRegion } from "@medusajs/types"
 import CollectionTemplate from "@modules/collections/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
@@ -62,12 +63,19 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
-  const metadata = {
-    title: `${collection.title} | Medusa Store`,
-    description: `${collection.title} collection`,
-  } as Metadata
-
-  return metadata
+  return buildSeoMetadata({
+    title: collection.title,
+    description:
+      collection.metadata?.description?.toString() ??
+      `Browse the ${collection.title} collection from Nepal Souvenirs.`,
+    countryCode: params.countryCode,
+    path: `/collections/${params.handle}`,
+    keywords: [
+      `${collection.title} Nepal`,
+      `${collection.title} collection`,
+      "Nepal handmade collection",
+    ],
+  })
 }
 
 export default async function CollectionPage(props: Props) {
