@@ -108,7 +108,24 @@ export async function middleware(request: NextRequest) {
   const cacheIdCookie = request.cookies.get("_medusa_cache_id")
   const cacheId = cacheIdCookie?.value || crypto.randomUUID()
 
-  const regionMap = await getRegionMap(cacheId)
+  // This middleware runs on virtually every request, so a throw here takes the
+  // whole storefront down rather than just the part that needs regions. The
+  // backend being briefly unreachable - a cold start, a redeploy, a blip -
+  // should degrade to the default region and let the page itself decide how to
+  // handle missing data.
+  let regionMap: Map<string, HttpTypes.StoreRegion>
+
+  try {
+    regionMap = await getRegionMap(cacheId)
+  } catch (error) {
+    console.error(
+      `Middleware: region lookup failed, falling back to "${DEFAULT_REGION}". ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    )
+    regionMap = new Map()
+  }
+
   const countryCode = await getCountryCode(request, regionMap)
 
   // if the country code is available, use it, otherwise use the default region
