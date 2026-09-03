@@ -3,7 +3,13 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**"]
+      "outputs": ["dist/**", ".next/**"],
+      "env": [
+        "NODE_ENV",
+        "MEDUSA_CLOUD_S3_HOSTNAME",
+        "MEDUSA_CLOUD_S3_PATHNAME",
+        "NEXT_PUBLIC_*"
+      ]
     },
     "dev": {
       "cache": false,
