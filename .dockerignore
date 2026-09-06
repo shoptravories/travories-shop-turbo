@@ -1,0 +1,33 @@
+# Dependencies & build artifacts (rebuilt inside the image)
+node_modules
+**/node_modules
+**/.medusa
+**/.next
+**/out
+**/dist
+**/build
+**/.turbo
+.turbo
+coverage
+
+# Secrets & local env (passed in at runtime instead)
+.env
+**/.env
+**/.env.local
+*.pem
+
+# VCS / tooling / docs
+.git
+.gitignore
+.vscode
+.vercel
+**/*.md
+
+# OS cruft
+.DS_Store
+**/.DS_Store
+
+# Repo scratch files not needed in the image
+response*.txt
+url*.txt
+test-*.js
