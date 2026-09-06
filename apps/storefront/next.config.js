@@ -1,6 +1,15 @@
+const path = require("path")
 const checkEnvVariables = require("./check-env-variables")
 
 checkEnvVariables()
+
+/**
+ * Standalone output is only used for the self-hosted Docker image. It is gated
+ * behind an env flag so Vercel builds are completely unaffected (Vercel manages
+ * its own output). The tracing root is pinned to the monorepo root so the
+ * bundle lands at a predictable path for the Dockerfile to copy.
+ */
+const standalone = process.env.NEXT_OUTPUT_STANDALONE === "1"
 
 /**
  * Medusa Cloud-related environment variables
@@ -19,6 +28,12 @@ const MEDIA_HOSTNAME = process.env.NEXT_PUBLIC_MEDIA_HOSTNAME
  * @type {import('next').NextConfig}
  */
 const nextConfig = {
+  ...(standalone
+    ? {
+        output: "standalone",
+        outputFileTracingRoot: path.join(__dirname, "../../"),
+      }
+    : {}),
   reactStrictMode: true,
   logging: {
     fetches: {
